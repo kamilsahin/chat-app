@@ -6,3 +6,7 @@
 *.iml
 *.iws
 *.ipr
+
+# Environment variables (contains secrets)
+.env
+.env.local
