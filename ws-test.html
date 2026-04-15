@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>Chat WebSocket Test</title>
+  <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7/bundles/stomp.umd.min.js"></script>
+  <style>
+    body { font-family: monospace; max-width: 800px; margin: 40px auto; padding: 0 20px; }
+    input, textarea { width: 100%; box-sizing: border-box; margin: 4px 0; padding: 6px; }
+    button { margin: 4px 2px; padding: 6px 14px; cursor: pointer; }
+    #log { background: #1e1e1e; color: #d4d4d4; padding: 12px; height: 300px; overflow-y: auto; border-radius: 4px; white-space: pre-wrap; }
+    .section { margin: 16px 0; padding: 12px; border: 1px solid #ddd; border-radius: 4px; }
+    label { font-weight: bold; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <h2>Chat App — WebSocket Test</h2>
+
+  <div class="section">
+    <label>JWT Token</label>
+    <input id="token" placeholder="Bearer token (jwt.io'dan üret)" />
+    <label>Server URL</label>
+    <input id="serverUrl" value="http://localhost:8081/ws" />
+    <button onclick="connect()">Connect</button>
+    <button onclick="disconnect()">Disconnect</button>
+  </div>
+
+  <div class="section">
+    <label>Subscribe — Room ID</label>
+    <input id="subRoomId" placeholder="Room ID" />
+    <button onclick="subscribeRoom()">Subscribe</button>
+  </div>
+
+  <div class="section">
+    <label>Send Message</label>
+    <input id="sendRoomId" placeholder="Room ID" />
+    <input id="msgContent" placeholder="Mesaj içeriği" />
+    <button onclick="sendMessage()">Gönder</button>
+  </div>
+
+  <div class="section">
+    <label>Log</label>
+    <div id="log"></div>
+    <button onclick="document.getElementById('log').innerHTML=''">Temizle</button>
+  </div>
+
+  <script>
+    let client = null;
+
+    function log(msg, color) {
+      const el = document.getElementById('log');
+      const time = new Date().toLocaleTimeString();
+      el.innerHTML += `<span style="color:${color||'#d4d4d4'}">[${time}] ${msg}\n</span>`;
+      el.scrollTop = el.scrollHeight;
+    }
+
+    function connect() {
+      const token = document.getElementById('token').value.trim();
+      const url = document.getElementById('serverUrl').value.trim();
+
+      if (!token) { alert('JWT token gir'); return; }
+
+      client = new StompJs.Client({
+        webSocketFactory: () => new SockJS(url),
+        connectHeaders: { Authorization: 'Bearer ' + token },
+        onConnect: () => log('✅ Connected', '#4ec9b0'),
+        onDisconnect: () => log('🔌 Disconnected', '#f44747'),
+        onStompError: (frame) => log('❌ STOMP Error: ' + frame.headers?.message, '#f44747'),
+      });
+
+      client.activate();
+      log('Connecting...', '#dcdcaa');
+    }
+
+    function disconnect() {
+      client?.deactivate();
+    }
+
+    function subscribeRoom() {
+      const roomId = document.getElementById('subRoomId').value.trim();
+      if (!roomId || !client?.connected) { alert('Önce connect ol ve Room ID gir'); return; }
+
+      client.subscribe(`/topic/room.${roomId}`, (msg) => {
+        log('📨 ' + msg.body, '#9cdcfe');
+      });
+      log(`Subscribed to /topic/room.${roomId}`, '#dcdcaa');
+    }
+
+    function sendMessage() {
+      const roomId = document.getElementById('sendRoomId').value.trim();
+      const content = document.getElementById('msgContent').value.trim();
+      if (!roomId || !content || !client?.connected) { alert('Önce connect ol, Room ID ve mesaj gir'); return; }
+
+      const payload = JSON.stringify({ type: 'TEXT', content });
+      client.publish({ destination: `/app/room.${roomId}.send`, body: payload });
+      log(`📤 Sent to room ${roomId}: ${content}`, '#ce9178');
+    }
+  </script>
+</body>
+</html>
