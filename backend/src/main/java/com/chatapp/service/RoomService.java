@@ -5,6 +5,7 @@ import com.chatapp.domain.model.Room.Member;
 import com.chatapp.domain.model.Room.MemberRole;
 import com.chatapp.domain.model.Room.RoomType;
 import com.chatapp.domain.repository.RoomRepository;
+import com.chatapp.api.dto.MuteRequest.MuteDuration;
 import com.chatapp.internal.dto.CreateRoomRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -88,5 +89,47 @@ public class RoomService {
     public Room getRoom(String roomId) {
         return roomRepository.findById(roomId)
                 .orElseThrow(() -> new IllegalArgumentException("Room not found: " + roomId));
+    }
+
+    public Room muteRoom(String roomId, String userId, MuteDuration duration) {
+        Room room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new IllegalArgumentException("Room not found: " + roomId));
+
+        Instant mutedUntil = switch (duration) {
+            case HOURS_8 -> Instant.now().plusSeconds(8 * 3600);
+            case WEEK_1 -> Instant.now().plusSeconds(7 * 24 * 3600);
+            case INDEFINITE -> null;
+        };
+
+        List<Member> updated = room.getMembers().stream()
+                .map(m -> {
+                    if (m.getUserId().equals(userId)) {
+                        m.setMuted(true);
+                        m.setMutedUntil(mutedUntil);
+                    }
+                    return m;
+                })
+                .toList();
+
+        room.setMembers(updated);
+        return roomRepository.save(room);
+    }
+
+    public Room unmuteRoom(String roomId, String userId) {
+        Room room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new IllegalArgumentException("Room not found: " + roomId));
+
+        List<Member> updated = room.getMembers().stream()
+                .map(m -> {
+                    if (m.getUserId().equals(userId)) {
+                        m.setMuted(false);
+                        m.setMutedUntil(null);
+                    }
+                    return m;
+                })
+                .toList();
+
+        room.setMembers(updated);
+        return roomRepository.save(room);
     }
 }
