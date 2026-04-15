@@ -20,7 +20,7 @@ public class RoomController {
 
     @GetMapping
     public List<Room> listRooms() {
-        return roomService.getRoomsForUser(AuthHelper.currentUser().getId());
+        return roomService.getRoomsForUser(AuthHelper.currentUser().getExternalId());
     }
 
     @GetMapping("/{roomId}")
@@ -32,12 +32,12 @@ public class RoomController {
     public Room muteRoom(
             @PathVariable String roomId,
             @Valid @RequestBody MuteRequest request) {
-        return roomService.muteRoom(roomId, AuthHelper.currentUser().getId(), request.duration());
+        return roomService.muteRoom(roomId, AuthHelper.currentUser().getExternalId(), request.duration());
     }
 
     @DeleteMapping("/{roomId}/mute")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void unmuteRoom(@PathVariable String roomId) {
-        roomService.unmuteRoom(roomId, AuthHelper.currentUser().getId());
+        roomService.unmuteRoom(roomId, AuthHelper.currentUser().getExternalId());
     }
 }

@@ -33,24 +33,24 @@ public class MessageController {
     public Message editMessage(
             @PathVariable String messageId,
             @Valid @RequestBody EditMessageRequest request) {
-        return messageService.editMessage(messageId, request.content(), AuthHelper.currentUser().getId());
+        return messageService.editMessage(messageId, request.content(), AuthHelper.currentUser().getExternalId());
     }
 
     @DeleteMapping("/api/messages/{messageId}")
     public Message deleteMessage(@PathVariable String messageId) {
-        return messageService.deleteMessage(messageId, AuthHelper.currentUser().getId());
+        return messageService.deleteMessage(messageId, AuthHelper.currentUser().getExternalId());
     }
 
     @PutMapping("/api/rooms/{roomId}/pin/{messageId}")
     public Message pinMessage(
             @PathVariable String roomId,
             @PathVariable String messageId) {
-        return messageService.pinMessage(roomId, messageId, AuthHelper.currentUser().getId());
+        return messageService.pinMessage(roomId, messageId, AuthHelper.currentUser().getExternalId());
     }
 
     @DeleteMapping("/api/rooms/{roomId}/pin")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void unpinMessage(@PathVariable String roomId) {
-        messageService.unpinMessage(roomId, AuthHelper.currentUser().getId());
+        messageService.unpinMessage(roomId, AuthHelper.currentUser().getExternalId());
     }
 }

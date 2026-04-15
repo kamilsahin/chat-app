@@ -43,7 +43,7 @@ public class PresenceService {
     private void broadcastPresence(User user) {
         PresenceEvent event = new PresenceEvent(user.getId(), user.isOnline(), user.getLastSeen());
 
-        List<String> roomIds = roomRepository.findAllByMemberUserId(user.getId())
+        List<String> roomIds = roomRepository.findAllByMemberUserId(user.getExternalId())
                 .stream().map(r -> r.getId()).toList();
 
         for (String roomId : roomIds) {

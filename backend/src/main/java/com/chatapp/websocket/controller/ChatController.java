@@ -32,7 +32,7 @@ public class ChatController {
             Principal principal) {
 
         User user = getUser(principal);
-        Message message = chatService.saveMessage(roomId, user.getId(), request);
+        Message message = chatService.saveMessage(roomId, user.getExternalId(), request);
         messagingTemplate.convertAndSend("/topic/room." + roomId, message);
     }
 
@@ -45,7 +45,7 @@ public class ChatController {
             Principal principal) {
 
         User user = getUser(principal);
-        TypingEvent event = new TypingEvent(user.getId(), user.getDisplayName(), request.typing());
+        TypingEvent event = new TypingEvent(user.getExternalId(), user.getDisplayName(), request.typing());
         messagingTemplate.convertAndSend("/topic/room." + roomId + ".typing", event);
     }
 
@@ -58,7 +58,7 @@ public class ChatController {
             Principal principal) {
 
         User user = getUser(principal);
-        Message message = chatService.toggleReaction(request.messageId(), user.getId(), request.emoji());
+        Message message = chatService.toggleReaction(request.messageId(), user.getExternalId(), request.emoji());
         messagingTemplate.convertAndSend("/topic/room." + roomId, message);
     }
 
@@ -71,7 +71,7 @@ public class ChatController {
             Principal principal) {
 
         User user = getUser(principal);
-        Message message = chatService.markAsRead(messageId, user.getId());
+        Message message = chatService.markAsRead(messageId, user.getExternalId());
         messagingTemplate.convertAndSend("/topic/room." + roomId, message);
     }
 
