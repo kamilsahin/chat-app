@@ -1,0 +1,44 @@
+spring:
+  data:
+    mongodb:
+      uri: ${MONGO_URI:mongodb://localhost:27017/chatdb}
+
+server:
+  port: 8080
+
+chat:
+  auth:
+    jwt-secret: ${JWT_SECRET:change-me-in-production}
+    jwt-issuer: ${JWT_ISSUER:}
+
+  internal:
+    api-secret: ${INTERNAL_API_SECRET:change-me-in-production}
+
+  storage:
+    provider: ${STORAGE_PROVIDER:LOCAL}
+    local:
+      upload-dir: ${STORAGE_LOCAL_DIR:/uploads}
+    s3:
+      bucket: ${S3_BUCKET:}
+      region: ${S3_REGION:}
+      access-key: ${S3_ACCESS_KEY:}
+      secret-key: ${S3_SECRET_KEY:}
+    r2:
+      bucket: ${R2_BUCKET:}
+      account-id: ${R2_ACCOUNT_ID:}
+      access-key: ${R2_ACCESS_KEY:}
+      secret-key: ${R2_SECRET_KEY:}
+
+  notifications:
+    enabled: ${NOTIFICATIONS_ENABLED:false}
+    fcm:
+      credentials-file: ${FCM_CREDENTIALS_FILE:}
+
+  features:
+    file-sharing-enabled: ${FEATURE_FILE_SHARING:true}
+    reactions-enabled: ${FEATURE_REACTIONS:true}
+    max-message-length: ${FEATURE_MAX_MSG_LENGTH:2000}
+    max-group-size: ${FEATURE_MAX_GROUP_SIZE:500}
+    message-retention-days: ${FEATURE_RETENTION_DAYS:0}
+    delete-permission: ${FEATURE_DELETE_PERMISSION:OWN_ONLY}
+    keyword-blocklist: ${FEATURE_KEYWORD_BLOCKLIST:}
