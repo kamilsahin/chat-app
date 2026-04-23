@@ -30,6 +30,8 @@ public class SecurityConfig {
                 .requestMatchers("/internal/**").permitAll()
                 // WebSocket handshake endpoint
                 .requestMatchers("/ws/**").permitAll()
+                // Uploaded images (UUID filenames, low-guessability)
+                .requestMatchers("/uploads/**").permitAll()
                 // Actuator health check
                 .requestMatchers("/actuator/health").permitAll()
                 // Everything else requires a valid JWT

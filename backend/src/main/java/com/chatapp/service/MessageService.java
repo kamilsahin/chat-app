@@ -10,7 +10,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.util.Optional;
 
@@ -22,7 +24,29 @@ public class MessageService {
 
     private final MessageRepository messageRepository;
     private final RoomRepository roomRepository;
+    private final StorageService storageService;
     private final ChatProperties properties;
+
+    public Message sendImageMessage(String roomId, String senderId, MultipartFile file) throws IOException {
+        if (!properties.getFeatures().isFileSharingEnabled()) {
+            throw new IllegalStateException("File sharing is disabled");
+        }
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new IllegalArgumentException("Only image files are allowed");
+        }
+
+        String imageUrl = storageService.store(file);
+
+        Message message = Message.builder()
+                .roomId(roomId)
+                .senderId(senderId)
+                .type(Message.MessageType.IMAGE)
+                .imageUrl(imageUrl)
+                .build();
+
+        return messageRepository.save(message);
+    }
 
     public Slice<Message> getHistory(String roomId, String cursor) {
         PageRequest page = PageRequest.of(0, PAGE_SIZE);

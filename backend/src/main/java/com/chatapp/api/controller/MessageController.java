@@ -8,13 +8,29 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Slice;
 import org.springframework.http.HttpStatus;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 
 @RestController
 @RequiredArgsConstructor
 public class MessageController {
 
     private final MessageService messageService;
+    private final SimpMessagingTemplate messagingTemplate;
+
+    @PostMapping("/api/rooms/{roomId}/messages/image")
+    @ResponseStatus(HttpStatus.CREATED)
+    public Message sendImage(
+            @PathVariable String roomId,
+            @RequestParam("file") MultipartFile file) throws IOException {
+        String senderId = AuthHelper.currentUser().getExternalId();
+        Message message = messageService.sendImageMessage(roomId, senderId, file);
+        messagingTemplate.convertAndSend("/topic/room." + roomId, message);
+        return message;
+    }
 
     @GetMapping("/api/rooms/{roomId}/messages")
     public Slice<Message> getHistory(
