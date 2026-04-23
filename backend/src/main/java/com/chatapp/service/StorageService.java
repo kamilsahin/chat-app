@@ -1,7 +1,7 @@
 package com.chatapp.service;
 
-import com.chatapp.config.ChatProperties;
-import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -12,36 +12,22 @@ import java.nio.file.Paths;
 import java.util.UUID;
 
 @Service
-@RequiredArgsConstructor
+@Slf4j
 public class StorageService {
 
-    private final ChatProperties properties;
+    @Value("${chat.storage.upload-dir:/uploads}")
+    private String uploadDir;
 
     public String store(MultipartFile file) throws IOException {
         String extension = extension(file.getOriginalFilename());
         String filename = UUID.randomUUID() + extension;
 
-        String provider = properties.getStorage().getProvider();
-        return switch (provider.toUpperCase()) {
-            case "S3" -> storeS3(file, filename);
-            case "R2" -> storeR2(file, filename);
-            default -> storeLocal(file, filename);
-        };
-    }
+        Path dir = Paths.get(uploadDir);
+        Files.createDirectories(dir);
+        Files.copy(file.getInputStream(), dir.resolve(filename));
 
-    private String storeLocal(MultipartFile file, String filename) throws IOException {
-        Path uploadDir = Paths.get(properties.getStorage().getLocal().getUploadDir());
-        Files.createDirectories(uploadDir);
-        Files.copy(file.getInputStream(), uploadDir.resolve(filename));
+        log.debug("Stored file: {}/{}", uploadDir, filename);
         return "/uploads/" + filename;
-    }
-
-    private String storeS3(MultipartFile file, String filename) {
-        throw new UnsupportedOperationException("S3 storage not yet configured");
-    }
-
-    private String storeR2(MultipartFile file, String filename) {
-        throw new UnsupportedOperationException("R2 storage not yet configured");
     }
 
     private static String extension(String filename) {

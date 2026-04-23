@@ -17,6 +17,7 @@ public class ChatProperties {
     private Notifications notifications = new Notifications();
     private Features features = new Features();
 
+
     @Data
     public static class Auth {
         private String jwtSecret;
@@ -30,31 +31,7 @@ public class ChatProperties {
 
     @Data
     public static class Storage {
-        private String provider = "LOCAL";
-        private Local local = new Local();
-        private S3 s3 = new S3();
-        private R2 r2 = new R2();
-
-        @Data
-        public static class Local {
-            private String uploadDir = "/uploads";
-        }
-
-        @Data
-        public static class S3 {
-            private String bucket;
-            private String region;
-            private String accessKey;
-            private String secretKey;
-        }
-
-        @Data
-        public static class R2 {
-            private String bucket;
-            private String accountId;
-            private String accessKey;
-            private String secretKey;
-        }
+        private String uploadDir = "/uploads";
     }
 
     @Data

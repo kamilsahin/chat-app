@@ -15,19 +15,7 @@ chat:
     api-secret: ${INTERNAL_API_SECRET:change-me-in-production}
 
   storage:
-    provider: ${STORAGE_PROVIDER:LOCAL}
-    local:
-      upload-dir: ${STORAGE_LOCAL_DIR:/uploads}
-    s3:
-      bucket: ${S3_BUCKET:}
-      region: ${S3_REGION:}
-      access-key: ${S3_ACCESS_KEY:}
-      secret-key: ${S3_SECRET_KEY:}
-    r2:
-      bucket: ${R2_BUCKET:}
-      account-id: ${R2_ACCOUNT_ID:}
-      access-key: ${R2_ACCESS_KEY:}
-      secret-key: ${R2_SECRET_KEY:}
+    upload-dir: ${CHAT_UPLOAD_DIR:/uploads}
 
   notifications:
     enabled: ${NOTIFICATIONS_ENABLED:false}
