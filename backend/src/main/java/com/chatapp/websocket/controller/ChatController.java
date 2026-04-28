@@ -1,6 +1,5 @@
 package com.chatapp.websocket.controller;
 
-import com.chatapp.common.security.AuthHelper;
 import com.chatapp.domain.model.Message;
 import com.chatapp.domain.model.User;
 import com.chatapp.service.ChatService;
