@@ -235,3 +235,15 @@ docker-compose up -d
 ```
 
 Uploaded files are stored in a named Docker volume (`chat-uploads`) so they survive container restarts.
+
+## Contributing
+
+Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a PR.
+
+- Branch from `develop`, not `main`
+- Open an issue first for large changes
+- PRs are reviewed and merged into `develop` before reaching `main`
+
+## License
+
+[MIT](LICENSE)
