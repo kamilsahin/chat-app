@@ -32,4 +32,11 @@ public class UserService {
         return userRepository.findByExternalId(externalId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + externalId));
     }
+
+    public void updateFcmToken(String externalId, String fcmToken) {
+        User user = userRepository.findByExternalId(externalId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + externalId));
+        user.setFcmToken(fcmToken);
+        userRepository.save(user);
+    }
 }

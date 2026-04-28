@@ -23,6 +23,7 @@ public class User {
     private String displayName;
     private String avatarUrl;
     private String bio;
+    private String fcmToken;
 
     @Builder.Default
     private boolean isOnline = false;

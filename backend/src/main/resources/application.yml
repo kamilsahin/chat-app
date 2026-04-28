@@ -15,7 +15,7 @@ chat:
     api-secret: ${INTERNAL_API_SECRET:change-me-in-production}
 
   storage:
-    upload-dir: ${CHAT_UPLOAD_DIR:/uploads}
+    upload-dir: ${CHAT_UPLOAD_DIR:./uploads}
 
   notifications:
     enabled: ${NOTIFICATIONS_ENABLED:false}

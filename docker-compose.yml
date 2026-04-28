@@ -26,8 +26,11 @@ services:
       JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
       JWT_ISSUER: ${JWT_ISSUER:-}
       INTERNAL_API_SECRET: ${INTERNAL_API_SECRET:-change-me-in-production}
-      STORAGE_PROVIDER: ${STORAGE_PROVIDER:-LOCAL}
+      CHAT_UPLOAD_DIR: /app/uploads
       NOTIFICATIONS_ENABLED: ${NOTIFICATIONS_ENABLED:-false}
+    volumes:
+      - chat-uploads:/app/uploads
 
 volumes:
   mongo-data:
+  chat-uploads:

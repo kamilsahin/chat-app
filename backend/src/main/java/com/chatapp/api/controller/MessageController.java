@@ -3,6 +3,8 @@ package com.chatapp.api.controller;
 import com.chatapp.api.dto.EditMessageRequest;
 import com.chatapp.common.security.AuthHelper;
 import com.chatapp.domain.model.Message;
+import com.chatapp.domain.model.User;
+import com.chatapp.service.FcmNotificationService;
 import com.chatapp.service.MessageService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,15 +22,17 @@ public class MessageController {
 
     private final MessageService messageService;
     private final SimpMessagingTemplate messagingTemplate;
+    private final FcmNotificationService fcmNotificationService;
 
     @PostMapping("/api/rooms/{roomId}/messages/image")
     @ResponseStatus(HttpStatus.CREATED)
     public Message sendImage(
             @PathVariable String roomId,
             @RequestParam("file") MultipartFile file) throws IOException {
-        String senderId = AuthHelper.currentUser().getExternalId();
-        Message message = messageService.sendImageMessage(roomId, senderId, file);
+        User sender = AuthHelper.currentUser();
+        Message message = messageService.sendImageMessage(roomId, sender.getExternalId(), file);
         messagingTemplate.convertAndSend("/topic/room." + roomId, message);
+        fcmNotificationService.notifyNewMessage(message, sender.getDisplayName());
         return message;
     }
 
@@ -49,12 +53,16 @@ public class MessageController {
     public Message editMessage(
             @PathVariable String messageId,
             @Valid @RequestBody EditMessageRequest request) {
-        return messageService.editMessage(messageId, request.content(), AuthHelper.currentUser().getExternalId());
+        Message message = messageService.editMessage(messageId, request.content(), AuthHelper.currentUser().getExternalId());
+        messagingTemplate.convertAndSend("/topic/room." + message.getRoomId(), message);
+        return message;
     }
 
     @DeleteMapping("/api/messages/{messageId}")
     public Message deleteMessage(@PathVariable String messageId) {
-        return messageService.deleteMessage(messageId, AuthHelper.currentUser().getExternalId());
+        Message message = messageService.deleteMessage(messageId, AuthHelper.currentUser().getExternalId());
+        messagingTemplate.convertAndSend("/topic/room." + message.getRoomId(), message);
+        return message;
     }
 
     @PutMapping("/api/rooms/{roomId}/pin/{messageId}")

@@ -6,7 +6,10 @@ import com.chatapp.domain.model.User;
 import com.chatapp.internal.dto.SyncUserRequest;
 import com.chatapp.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users")
@@ -25,5 +28,11 @@ public class UserController {
         User current = AuthHelper.currentUser();
         return userService.syncUser(current.getExternalId(),
                 new SyncUserRequest(request.displayName(), request.avatarUrl(), request.bio()));
+    }
+
+    @PutMapping("/me/fcm-token")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void updateFcmToken(@RequestBody Map<String, String> body) {
+        userService.updateFcmToken(AuthHelper.currentUser().getExternalId(), body.get("token"));
     }
 }

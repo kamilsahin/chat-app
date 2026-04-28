@@ -4,6 +4,7 @@ import com.chatapp.common.security.AuthHelper;
 import com.chatapp.domain.model.Message;
 import com.chatapp.domain.model.User;
 import com.chatapp.service.ChatService;
+import com.chatapp.service.FcmNotificationService;
 import com.chatapp.websocket.dto.ReactionRequest;
 import com.chatapp.websocket.dto.SendMessageRequest;
 import com.chatapp.websocket.dto.TypingEvent;
@@ -22,6 +23,7 @@ public class ChatController {
 
     private final ChatService chatService;
     private final SimpMessagingTemplate messagingTemplate;
+    private final FcmNotificationService fcmNotificationService;
 
     // Client publishes to: /app/room.{roomId}.send
     // Server broadcasts to: /topic/room.{roomId}
@@ -34,6 +36,7 @@ public class ChatController {
         User user = getUser(principal);
         Message message = chatService.saveMessage(roomId, user.getExternalId(), request);
         messagingTemplate.convertAndSend("/topic/room." + roomId, message);
+        fcmNotificationService.notifyNewMessage(message, user.getDisplayName());
     }
 
     // Client publishes to: /app/room.{roomId}.typing
