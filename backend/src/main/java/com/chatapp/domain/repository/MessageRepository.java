@@ -18,4 +18,11 @@ public interface MessageRepository extends MongoRepository<Message, String> {
     Slice<Message> findByRoomIdOrderByCreatedAtDesc(String roomId, Pageable pageable);
 
     Optional<Message> findByRoomIdAndIsPinnedTrue(String roomId);
+
+    Optional<Message> findFirstByRoomIdOrderByCreatedAtDesc(String roomId);
+
+    @org.springframework.data.mongodb.repository.Query(
+        "{ 'roomId': ?0, 'senderId': { $ne: ?1 }, 'readBy.userId': { $ne: ?1 }, 'isDeleted': false }"
+    )
+    long countByRoomIdAndSenderIdNotAndReadByUserIdNot(String roomId, String userId);
 }
