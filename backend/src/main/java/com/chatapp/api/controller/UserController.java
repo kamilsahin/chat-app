@@ -27,7 +27,7 @@ public class UserController {
     public User updateProfile(@RequestBody UpdateProfileRequest request) {
         User current = AuthHelper.currentUser();
         return userService.syncUser(current.getExternalId(),
-                new SyncUserRequest(request.displayName(), request.avatarUrl(), request.bio()));
+                new SyncUserRequest(request.displayName(), request.nickname(), request.avatarUrl(), request.bio()));
     }
 
     @PutMapping("/me/fcm-token")
