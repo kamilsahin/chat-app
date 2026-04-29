@@ -6,6 +6,7 @@ import com.chatapp.domain.model.Room;
 import com.chatapp.domain.model.Room.MemberRole;
 import com.chatapp.domain.repository.MessageRepository;
 import com.chatapp.domain.repository.RoomRepository;
+import com.chatapp.internal.dto.CreateMessageRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
@@ -45,6 +46,18 @@ public class MessageService {
                 .imageUrl(imageUrl)
                 .build();
 
+        return messageRepository.save(message);
+    }
+
+    public Message createMessage(String roomId, CreateMessageRequest request) {
+        Message message = Message.builder()
+                .roomId(roomId)
+                .senderId(request.senderId())
+                .type(request.type())
+                .content(request.content() != null ? applyBlocklist(request.content()) : null)
+                .replyTo(request.replyTo())
+                .createdAt(request.createdAt() != null ? request.createdAt() : Instant.now())
+                .build();
         return messageRepository.save(message);
     }
 

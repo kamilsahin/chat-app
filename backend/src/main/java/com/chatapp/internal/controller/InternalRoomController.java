@@ -3,11 +3,14 @@ package com.chatapp.internal.controller;
 import com.chatapp.domain.model.Room;
 import com.chatapp.internal.dto.AddMembersRequest;
 import com.chatapp.internal.dto.CreateRoomRequest;
+import com.chatapp.internal.dto.RoomSummaryDto;
 import com.chatapp.service.RoomService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/internal/rooms")
@@ -15,6 +18,19 @@ import org.springframework.web.bind.annotation.*;
 public class InternalRoomController {
 
     private final RoomService roomService;
+
+    @GetMapping
+    public Object getRooms(
+            @RequestParam String userId,
+            @RequestParam(required = false) Room.RoomType type,
+            @RequestParam(defaultValue = "false") boolean summary,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        if (summary) {
+            return roomService.getRoomSummariesForUser(userId, type, page, size);
+        }
+        return roomService.getRoomsForUser(userId, type, page, size);
+    }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)

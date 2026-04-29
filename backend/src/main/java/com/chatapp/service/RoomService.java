@@ -4,10 +4,14 @@ import com.chatapp.domain.model.Room;
 import com.chatapp.domain.model.Room.Member;
 import com.chatapp.domain.model.Room.MemberRole;
 import com.chatapp.domain.model.Room.RoomType;
+import com.chatapp.domain.repository.MessageRepository;
 import com.chatapp.domain.repository.RoomRepository;
 import com.chatapp.api.dto.MuteRequest.MuteDuration;
 import com.chatapp.internal.dto.CreateRoomRequest;
+import com.chatapp.internal.dto.RoomSummaryDto;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -19,6 +23,7 @@ import java.util.List;
 public class RoomService {
 
     private final RoomRepository roomRepository;
+    private final MessageRepository messageRepository;
 
     public Room createRoom(CreateRoomRequest request) {
         List<Member> members = new ArrayList<>();
@@ -82,8 +87,28 @@ public class RoomService {
         return roomRepository.save(room);
     }
 
-    public List<Room> getRoomsForUser(String userId) {
+    public List<Room> getRoomsForUser(String userId, Room.RoomType type) {
+        if (type != null) {
+            return roomRepository.findAllByMemberUserIdAndType(userId, type);
+        }
         return roomRepository.findAllByMemberUserId(userId);
+    }
+
+    public Slice<Room> getRoomsForUser(String userId, RoomType type, int page, int size) {
+        PageRequest pageable = PageRequest.of(page, size);
+        if (type != null) {
+            return roomRepository.findByMemberUserIdAndType(userId, type, pageable);
+        }
+        return roomRepository.findByMemberUserId(userId, pageable);
+    }
+
+    public Slice<RoomSummaryDto> getRoomSummariesForUser(String userId, RoomType type, int page, int size) {
+        Slice<Room> rooms = getRoomsForUser(userId, type, page, size);
+        return rooms.map(room -> new RoomSummaryDto(
+                room,
+                messageRepository.findFirstByRoomIdOrderByCreatedAtDesc(room.getId()).orElse(null),
+                messageRepository.countByRoomIdAndSenderIdNotAndReadByUserIdNot(room.getId(), userId)
+        ));
     }
 
     public Room getRoom(String roomId) {

@@ -126,10 +126,13 @@ Internal endpoints expect `X-Internal-Secret: <secret>` header.
 
 | Method | Path | Description |
 |--------|------|-------------|
+| `GET` | `/internal/rooms?userId={id}&type={DIRECT\|GROUP}&summary={bool}&page={n}&size={n}` | Kullanıcının odalarını sayfalı getirir. `summary=true` ile son mesaj ve okunmamış sayısı da döner. Varsayılan: page=0, size=20 |
 | `POST` | `/internal/rooms` | Create a room → returns full Room object with `id` |
 | `DELETE` | `/internal/rooms/{roomId}` | Delete a room and its messages |
 | `POST` | `/internal/rooms/{roomId}/members` | Add members to a room |
 | `DELETE` | `/internal/rooms/{roomId}/members/{userId}` | Remove a member from a room |
+| `POST` | `/internal/rooms/{roomId}/messages` | Create a message (migration veya server-side yazma) |
+| `GET` | `/internal/rooms/{roomId}/messages` | Oda mesajlarını getir (`?cursor=<ISO instant>`) |
 
 **Create room request body:**
 ```json
