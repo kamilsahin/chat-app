@@ -77,7 +77,7 @@ Call from your backend when a user registers or logs in:
 curl -X PUT http://localhost:8080/internal/users/user123 \
   -H "X-Internal-Secret: your-internal-api-secret" \
   -H "Content-Type: application/json" \
-  -d '{"displayName": "Jane Doe", "avatarUrl": "https://..."}'
+  -d '{"displayName": "Jane Doe", "nickname": "jane", "avatarUrl": "https://..."}'
 ```
 
 ### 4. Create a room
@@ -119,7 +119,7 @@ Internal endpoints expect `X-Internal-Secret: <secret>` header.
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `PUT` | `/internal/users/{externalId}` | Create or update a user (displayName, avatarUrl, bio) |
+| `PUT` | `/internal/users/{externalId}` | Create or update a user (displayName, nickname, avatarUrl, bio) |
 | `DELETE` | `/internal/users/{externalId}` | Delete a user |
 
 ### Internal API — Room Management
@@ -147,7 +147,7 @@ Internal endpoints expect `X-Internal-Secret: <secret>` header.
 | Method | Path | Description |
 |--------|------|-------------|
 | `GET` | `/api/users/{userId}` | Get user profile |
-| `PUT` | `/api/users/me` | Update own profile (displayName, avatarUrl, bio) |
+| `PUT` | `/api/users/me` | Update own profile (displayName, nickname, avatarUrl, bio) |
 | `PUT` | `/api/users/me/fcm-token` | Register FCM push token |
 
 ### Room API

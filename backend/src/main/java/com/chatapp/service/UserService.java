@@ -20,6 +20,7 @@ public class UserService {
         if (request.nickname() != null) user.setNickname(request.nickname());
         if (request.avatarUrl() != null) user.setAvatarUrl(request.avatarUrl());
         if (request.bio() != null) user.setBio(request.bio());
+        if (request.fcmToken() != null) user.setFcmToken(request.fcmToken());
 
         return userRepository.save(user);
     }
