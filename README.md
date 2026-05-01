@@ -112,6 +112,12 @@ Sign with the same `JWT_SECRET`. The Flutter/web client uses this token directly
 
 ## API Reference
 
+A ready-to-use Postman collection is included in the repo. Import it to explore all endpoints instantly:
+
+1. Open Postman → **Import** → select `chat-app.postman_collection.json`
+2. Set the collection variables: `base_url`, `internal_secret`, `jwt`
+3. Start calling
+
 All endpoints that require auth expect `Authorization: Bearer <jwt>` header.  
 Internal endpoints expect `X-Internal-Secret: <secret>` header.
 

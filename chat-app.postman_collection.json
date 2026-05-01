@@ -1,0 +1,476 @@
+{
+  "info": {
+    "name": "chat-app",
+    "description": "chat-app backend API collection.\n\nVariables to set before use:\n- `base_url` — e.g. http://localhost:8080\n- `internal_secret` — value of INTERNAL_API_SECRET in .env\n- `jwt` — JWT token issued by your backend (sub = externalId)\n- `room_id` — populated by Create Room response\n- `message_id` — populated by any message response",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url",        "value": "http://localhost:8080" },
+    { "key": "internal_secret", "value": "your-internal-api-secret" },
+    { "key": "jwt",             "value": "your-jwt-token" },
+    { "key": "room_id",         "value": "" },
+    { "key": "message_id",      "value": "" },
+    { "key": "external_id",     "value": "user123" }
+  ],
+  "item": [
+    {
+      "name": "Internal API",
+      "description": "Server-to-server calls. All requests require X-Internal-Secret header.",
+      "item": [
+        {
+          "name": "User Management",
+          "item": [
+            {
+              "name": "Sync User",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  { "key": "X-Internal-Secret", "value": "{{internal_secret}}" },
+                  { "key": "Content-Type",       "value": "application/json" }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/internal/users/{{external_id}}",
+                  "host": ["{{base_url}}"],
+                  "path": ["internal", "users", "{{external_id}}"]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"displayName\": \"Jane Doe\",\n  \"nickname\": \"jane\",\n  \"avatarUrl\": \"https://example.com/avatar.jpg\",\n  \"fcmToken\": null\n}"
+                },
+                "description": "Create or update a user. Call this on user register/login from your backend."
+              }
+            },
+            {
+              "name": "Delete User",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  { "key": "X-Internal-Secret", "value": "{{internal_secret}}" }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/internal/users/{{external_id}}",
+                  "host": ["{{base_url}}"],
+                  "path": ["internal", "users", "{{external_id}}"]
+                },
+                "description": "Delete a user."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Room Management",
+          "item": [
+            {
+              "name": "List User Rooms",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "X-Internal-Secret", "value": "{{internal_secret}}" }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/internal/rooms?userId={{external_id}}&type=DIRECT&summary=true&page=0&size=20",
+                  "host": ["{{base_url}}"],
+                  "path": ["internal", "rooms"],
+                  "query": [
+                    { "key": "userId",  "value": "{{external_id}}" },
+                    { "key": "type",    "value": "DIRECT", "description": "DIRECT or GROUP" },
+                    { "key": "summary", "value": "true",   "description": "Includes lastMessage + unreadCount" },
+                    { "key": "page",    "value": "0" },
+                    { "key": "size",    "value": "20" }
+                  ]
+                },
+                "description": "Returns paginated rooms for a user. summary=true adds last message and unread count."
+              }
+            },
+            {
+              "name": "Create Room (DIRECT)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "X-Internal-Secret", "value": "{{internal_secret}}" },
+                  { "key": "Content-Type",       "value": "application/json" }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/internal/rooms",
+                  "host": ["{{base_url}}"],
+                  "path": ["internal", "rooms"]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"type\": \"DIRECT\",\n  \"name\": \"Jane & John\",\n  \"memberIds\": [\"user123\", \"user456\"],\n  \"adminId\": \"user123\"\n}"
+                },
+                "description": "Create a 1-1 room. Save the returned id as room_id variable."
+              }
+            },
+            {
+              "name": "Create Room (GROUP)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "X-Internal-Secret", "value": "{{internal_secret}}" },
+                  { "key": "Content-Type",       "value": "application/json" }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/internal/rooms",
+                  "host": ["{{base_url}}"],
+                  "path": ["internal", "rooms"]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"type\": \"GROUP\",\n  \"name\": \"Futbol Etkinliği\",\n  \"avatarUrl\": \"https://example.com/group.jpg\",\n  \"memberIds\": [\"user123\", \"user456\", \"user789\"],\n  \"adminId\": \"user123\"\n}"
+                },
+                "description": "Create a group room (e.g. for an activity)."
+              }
+            },
+            {
+              "name": "Delete Room",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  { "key": "X-Internal-Secret", "value": "{{internal_secret}}" }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/internal/rooms/{{room_id}}",
+                  "host": ["{{base_url}}"],
+                  "path": ["internal", "rooms", "{{room_id}}"]
+                },
+                "description": "Delete a room and all its messages."
+              }
+            },
+            {
+              "name": "Add Members",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "X-Internal-Secret", "value": "{{internal_secret}}" },
+                  { "key": "Content-Type",       "value": "application/json" }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/internal/rooms/{{room_id}}/members",
+                  "host": ["{{base_url}}"],
+                  "path": ["internal", "rooms", "{{room_id}}", "members"]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"memberIds\": [\"user789\", \"user101\"]\n}"
+                },
+                "description": "Add one or more members to a room. Idempotent — already-members are skipped."
+              }
+            },
+            {
+              "name": "Remove Member",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  { "key": "X-Internal-Secret", "value": "{{internal_secret}}" }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/internal/rooms/{{room_id}}/members/{{external_id}}",
+                  "host": ["{{base_url}}"],
+                  "path": ["internal", "rooms", "{{room_id}}", "members", "{{external_id}}"]
+                },
+                "description": "Remove a member from a room."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Message Management",
+          "item": [
+            {
+              "name": "Create Message",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "X-Internal-Secret", "value": "{{internal_secret}}" },
+                  { "key": "Content-Type",       "value": "application/json" }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/internal/rooms/{{room_id}}/messages",
+                  "host": ["{{base_url}}"],
+                  "path": ["internal", "rooms", "{{room_id}}", "messages"]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"senderId\": \"user123\",\n  \"type\": \"TEXT\",\n  \"content\": \"Merhaba!\",\n  \"replyTo\": null,\n  \"createdAt\": null\n}"
+                },
+                "description": "Send a message server-side (shadow mode writes or migration). createdAt is optional — omit for now, or pass ISO-8601 string to preserve historical timestamps."
+              }
+            },
+            {
+              "name": "Get Message History",
+              "request": {
+                "method": "GET",
+                "header": [
+                  { "key": "X-Internal-Secret", "value": "{{internal_secret}}" }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/internal/rooms/{{room_id}}/messages?cursor=",
+                  "host": ["{{base_url}}"],
+                  "path": ["internal", "rooms", "{{room_id}}", "messages"],
+                  "query": [
+                    { "key": "cursor", "value": "", "description": "ISO-8601 instant for pagination (e.g. 2024-01-01T00:00:00Z). Omit for first page." }
+                  ]
+                },
+                "description": "Paginated message history, newest first. Pass cursor from the oldest message's createdAt to load older pages."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "User API",
+      "description": "Authenticated with JWT. Set the jwt variable.",
+      "item": [
+        {
+          "name": "Get User Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/users/{{external_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "{{external_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Own Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/users/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "me"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"displayName\": \"Jane Doe\",\n  \"nickname\": \"jane\",\n  \"avatarUrl\": \"https://example.com/avatar.jpg\",\n  \"bio\": \"Hello!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Register FCM Token",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/users/me/fcm-token",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "me", "fcm-token"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"fcm-device-token-here\"\n}"
+            },
+            "description": "Called by the Flutter client on startup to register the device push token."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Room API",
+      "description": "Authenticated with JWT.",
+      "item": [
+        {
+          "name": "List My Rooms",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/rooms?type=",
+              "host": ["{{base_url}}"],
+              "path": ["api", "rooms"],
+              "query": [
+                { "key": "type", "value": "", "description": "DIRECT or GROUP — omit for all rooms" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Room",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/rooms/{{room_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "rooms", "{{room_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Mute Room",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/rooms/{{room_id}}/mute",
+              "host": ["{{base_url}}"],
+              "path": ["api", "rooms", "{{room_id}}", "mute"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"duration\": \"PT8H\"\n}"
+            },
+            "description": "Mute durations: PT1H (1h), PT8H (8h), P7D (1 week), omit field for permanent."
+          }
+        },
+        {
+          "name": "Unmute Room",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/rooms/{{room_id}}/mute",
+              "host": ["{{base_url}}"],
+              "path": ["api", "rooms", "{{room_id}}", "mute"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Message API",
+      "description": "Authenticated with JWT.",
+      "item": [
+        {
+          "name": "Get Message History",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/rooms/{{room_id}}/messages?cursor=",
+              "host": ["{{base_url}}"],
+              "path": ["api", "rooms", "{{room_id}}", "messages"],
+              "query": [
+                { "key": "cursor", "value": "", "description": "ISO-8601 instant for pagination. Omit for first page." }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Send Image",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/rooms/{{room_id}}/messages/image",
+              "host": ["{{base_url}}"],
+              "path": ["api", "rooms", "{{room_id}}", "messages", "image"]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "description": "Image file (JPEG, PNG, etc.)" }
+              ]
+            },
+            "description": "Upload and send a photo message. Requires FEATURE_FILE_SHARING=true."
+          }
+        },
+        {
+          "name": "Edit Message",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" },
+              { "key": "Content-Type",  "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/messages/{{message_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "messages", "{{message_id}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Güncellenmiş mesaj içeriği\"\n}"
+            },
+            "description": "Only the sender can edit. Deleted messages cannot be edited."
+          }
+        },
+        {
+          "name": "Delete Message",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/messages/{{message_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "messages", "{{message_id}}"]
+            },
+            "description": "Soft-delete. Content is replaced with 'Bu mesaj silindi'. Permission depends on FEATURE_DELETE_PERMISSION setting."
+          }
+        },
+        {
+          "name": "Get Pinned Message",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/rooms/{{room_id}}/pin",
+              "host": ["{{base_url}}"],
+              "path": ["api", "rooms", "{{room_id}}", "pin"]
+            }
+          }
+        },
+        {
+          "name": "Pin Message",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/rooms/{{room_id}}/pin/{{message_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "rooms", "{{room_id}}", "pin", "{{message_id}}"]
+            },
+            "description": "Admin only. Replaces any previously pinned message."
+          }
+        },
+        {
+          "name": "Unpin Message",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/rooms/{{room_id}}/pin",
+              "host": ["{{base_url}}"],
+              "path": ["api", "rooms", "{{room_id}}", "pin"]
+            },
+            "description": "Admin only."
+          }
+        }
+      ]
+    }
+  ]
+}
