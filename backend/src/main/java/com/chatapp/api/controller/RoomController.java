@@ -19,8 +19,9 @@ public class RoomController {
     private final RoomService roomService;
 
     @GetMapping
-    public List<Room> listRooms() {
-        return roomService.getRoomsForUser(AuthHelper.currentUser().getExternalId());
+    public List<Room> listRooms(
+            @RequestParam(required = false) Room.RoomType type) {
+        return roomService.getRoomsForUser(AuthHelper.currentUser().getExternalId(), type);
     }
 
     @GetMapping("/{roomId}")
