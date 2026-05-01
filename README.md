@@ -157,7 +157,7 @@ Internal endpoints expect `X-Internal-Secret: <secret>` header.
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET` | `/api/rooms` | List rooms for the authenticated user |
+| `GET` | `/api/rooms?type={DIRECT\|GROUP}` | List rooms for the authenticated user (optional type filter) |
 | `GET` | `/api/rooms/{roomId}` | Get a single room |
 | `PUT` | `/api/rooms/{roomId}/mute` | Mute a room (body: `{"duration": "PT1H"}`) |
 | `DELETE` | `/api/rooms/{roomId}/mute` | Unmute a room |
