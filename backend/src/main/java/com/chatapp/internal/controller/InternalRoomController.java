@@ -4,6 +4,7 @@ import com.chatapp.domain.model.Room;
 import com.chatapp.internal.dto.AddMembersRequest;
 import com.chatapp.internal.dto.CreateRoomRequest;
 import com.chatapp.internal.dto.RoomSummaryDto;
+import com.chatapp.internal.dto.UpdateRoomRequest;
 import com.chatapp.service.RoomService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +37,13 @@ public class InternalRoomController {
     @ResponseStatus(HttpStatus.CREATED)
     public Room createRoom(@Valid @RequestBody CreateRoomRequest request) {
         return roomService.createRoom(request);
+    }
+
+    @PatchMapping("/{roomId}")
+    public Room updateRoom(
+            @PathVariable String roomId,
+            @RequestBody UpdateRoomRequest request) {
+        return roomService.updateRoom(roomId, request);
     }
 
     @DeleteMapping("/{roomId}")

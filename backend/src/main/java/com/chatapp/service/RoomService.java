@@ -111,6 +111,16 @@ public class RoomService {
         ));
     }
 
+    public Room updateRoom(String roomId, UpdateRoomRequest request) {
+        Room room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new IllegalArgumentException("Room not found: " + roomId));
+
+        if (request.name() != null && !request.name().isBlank()) room.setName(request.name());
+        if (request.avatarUrl() != null) room.setAvatarUrl(request.avatarUrl());
+
+        return roomRepository.save(room);
+    }
+
     public Room getRoom(String roomId) {
         return roomRepository.findById(roomId)
                 .orElseThrow(() -> new IllegalArgumentException("Room not found: " + roomId));
