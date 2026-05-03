@@ -9,6 +9,7 @@ import com.chatapp.domain.repository.RoomRepository;
 import com.chatapp.api.dto.MuteRequest.MuteDuration;
 import com.chatapp.internal.dto.CreateRoomRequest;
 import com.chatapp.internal.dto.RoomSummaryDto;
+import com.chatapp.internal.dto.UpdateRoomRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
