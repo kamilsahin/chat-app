@@ -9,6 +9,7 @@ import com.chatapp.domain.repository.RoomRepository;
 import com.chatapp.api.dto.MuteRequest.MuteDuration;
 import com.chatapp.internal.dto.CreateRoomRequest;
 import com.chatapp.internal.dto.RoomSummaryDto;
+import com.chatapp.internal.dto.UpdateRoomRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
@@ -109,6 +110,16 @@ public class RoomService {
                 messageRepository.findFirstByRoomIdOrderByCreatedAtDesc(room.getId()).orElse(null),
                 messageRepository.countByRoomIdAndSenderIdNotAndReadByUserIdNot(room.getId(), userId)
         ));
+    }
+
+    public Room updateRoom(String roomId, UpdateRoomRequest request) {
+        Room room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new IllegalArgumentException("Room not found: " + roomId));
+
+        if (request.name() != null && !request.name().isBlank()) room.setName(request.name());
+        if (request.avatarUrl() != null) room.setAvatarUrl(request.avatarUrl());
+
+        return roomRepository.save(room);
     }
 
     public Room getRoom(String roomId) {
