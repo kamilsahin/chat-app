@@ -44,6 +44,7 @@ public class RoomService {
                 .name(request.name())
                 .avatarUrl(request.avatarUrl())
                 .members(members)
+                .active(Boolean.TRUE)
                 .build();
 
         return roomRepository.save(room);
@@ -51,6 +52,13 @@ public class RoomService {
 
     public void deleteRoom(String roomId) {
         roomRepository.deleteById(roomId);
+    }
+
+    public void deactivateRoom(String roomId) {
+        Room room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new IllegalArgumentException("Room not found: " + roomId));
+        room.setActive(Boolean.FALSE);
+        roomRepository.save(room);
     }
 
     public Room addMembers(String roomId, List<String> memberIds) {

@@ -25,6 +25,9 @@ public class Room {
     @Builder.Default
     private List<Member> members = List.of();
 
+    @Builder.Default
+    private Boolean active = Boolean.TRUE;
+
     @CreatedDate
     private Instant createdAt;
 

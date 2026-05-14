@@ -52,6 +52,12 @@ public class InternalRoomController {
         roomService.deleteRoom(roomId);
     }
 
+    @PatchMapping("/{roomId}/deactivate")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deactivateRoom(@PathVariable String roomId) {
+        roomService.deactivateRoom(roomId);
+    }
+
     @PostMapping("/{roomId}/members")
     public Room addMembers(
             @PathVariable String roomId,
