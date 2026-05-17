@@ -4,7 +4,7 @@ spring:
       uri: ${MONGO_URI:mongodb://localhost:27017/chatdb}
 
 server:
-  port: 8080
+  port: ${SERVER_PORT:8081}
 
 chat:
   auth:

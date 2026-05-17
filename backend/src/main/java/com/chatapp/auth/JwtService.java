@@ -4,13 +4,13 @@ import com.chatapp.config.ChatProperties;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
+import javax.crypto.spec.SecretKeySpec;
+import java.util.Base64;
 import java.util.Optional;
 
 @Slf4j
@@ -22,8 +22,7 @@ public class JwtService {
 
     public Optional<Claims> parse(String token) {
         try {
-            SecretKey key = Keys.hmacShaKeyFor(
-                    properties.getAuth().getJwtSecret().getBytes(StandardCharsets.UTF_8));
+            SecretKey key = buildKey(properties.getAuth().getJwtSecret());
 
             var parser = Jwts.parser().verifyWith(key);
 
@@ -45,5 +44,14 @@ public class JwtService {
 
     public Optional<String> extractExternalId(String token) {
         return parse(token).map(Claims::getSubject);
+    }
+
+    // ActiZone (JJWT 0.9.x) calls signWith(HS512, base64String) which base64-decodes
+    // the secret before using it as the HMAC key. We replicate that here so the chat
+    // service can verify tokens issued by ActiZone without changing ActiZone.
+    private SecretKey buildKey(String secret) {
+        int padding = (4 - secret.length() % 4) % 4;
+        byte[] keyBytes = Base64.getDecoder().decode(secret + "=".repeat(padding));
+        return new SecretKeySpec(keyBytes, "HmacSHA512");
     }
 }
