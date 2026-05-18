@@ -55,7 +55,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     // On first valid connection, auto-create a local user profile if it doesn't exist.
     private User resolveUser(Claims claims) {
-        String externalId = claims.getSubject();
+        // ActiZone JWTs (JJWT 0.9.x) call setClaims() after setSubject(), which wipes
+        // the "sub" claim. The user ID ends up in the "id" claim instead.
+        String rawId = claims.get("id", String.class);
+        String externalId = rawId != null ? rawId : claims.getSubject();
         String displayName = claims.get("displayName", String.class);
 
         return userRepository.findByExternalId(externalId)

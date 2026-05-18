@@ -1,0 +1,12 @@
+chat:
+  notifications:
+    enabled: ${NOTIFICATIONS_ENABLED:false}
+    fcm:
+      credentials-file: ${FCM_CREDENTIALS_FILE:classpath:firebase-service-account.json}
+
+logging:
+  file:
+    name: /var/log/chat/app.log
+  level:
+    root: WARN
+    com.chatapp: INFO
