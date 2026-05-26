@@ -2,7 +2,7 @@ package com.chatapp.auth;
 
 import com.chatapp.domain.model.User;
 import com.chatapp.domain.repository.UserRepository;
-import io.jsonwebtoken.Claims;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.Message;
@@ -42,29 +42,48 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
 
         String token = authHeader.substring(7);
 
-        Claims claims = jwtService.parse(token)
+        Map<String, Object> payload = jwtService.parse(token)
                 .orElseThrow(() -> {
                     log.warn("WebSocket CONNECT rejected: invalid JWT");
                     return new IllegalArgumentException("Invalid JWT");
                 });
 
-        User user = resolveUser(claims);
+        User user = resolveUser(payload);
 
         accessor.setUser(new UsernamePasswordAuthenticationToken(user, null, List.of()));
 
         return message;
     }
 
-    private User resolveUser(Claims claims) {
-        String externalId = claims.getSubject();
-        String displayName = claims.get("displayName", String.class);
+    private User resolveUser(Map<String, Object> payload) {
+        Object idObj = payload.get("id");
+        Object subObj = payload.get("sub");
+        String externalId = idObj != null ? String.valueOf(idObj)
+                          : subObj != null ? String.valueOf(subObj) : null;
+        String displayName = payload.get("displayName") != null
+                ? String.valueOf(payload.get("displayName")) : null;
+        String avatarUrl = payload.get("avatarUrl") != null
+                ? String.valueOf(payload.get("avatarUrl")) : null;
 
         return userRepository.findByExternalId(externalId)
+                .map(existing -> {
+                    boolean dirty = false;
+                    if (displayName != null && !displayName.equals(existing.getDisplayName())) {
+                        existing.setDisplayName(displayName);
+                        dirty = true;
+                    }
+                    if (avatarUrl != null && !avatarUrl.equals(existing.getAvatarUrl())) {
+                        existing.setAvatarUrl(avatarUrl);
+                        dirty = true;
+                    }
+                    return dirty ? userRepository.save(existing) : existing;
+                })
                 .orElseGet(() -> {
                     log.info("Auto-creating user for WebSocket connect, externalId={}", externalId);
                     return userRepository.save(User.builder()
                             .externalId(externalId)
                             .displayName(displayName != null ? displayName : externalId)
+                            .avatarUrl(avatarUrl)
                             .createdAt(Instant.now())
                             .build());
                 });

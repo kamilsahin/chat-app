@@ -28,8 +28,18 @@ public class Room {
     @Builder.Default
     private Boolean active = Boolean.TRUE;
 
+    private Instant lastActivityAt;
+
+    /** Denormalized preview of the last non-deleted message in this room. */
+    private String lastMessage;
+
     @CreatedDate
     private Instant createdAt;
+
+    /** Calculated at query time by RoomService; not meaningful when stored.
+     *  Long (boxed) so old documents without this field deserialize as null → 0. */
+    @Builder.Default
+    private Long unreadCount = 0L;
 
     // -------------------------------------------------------------------------
 
