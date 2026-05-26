@@ -3,6 +3,7 @@ package com.chatapp.internal.controller;
 import com.chatapp.domain.model.Room;
 import com.chatapp.internal.dto.AddMembersRequest;
 import com.chatapp.internal.dto.CreateRoomRequest;
+import com.chatapp.internal.dto.FindOrCreateDirectRoomRequest;
 import com.chatapp.internal.dto.RoomSummaryDto;
 import com.chatapp.internal.dto.UpdateRoomRequest;
 import com.chatapp.service.RoomService;
@@ -37,6 +38,11 @@ public class InternalRoomController {
     @ResponseStatus(HttpStatus.CREATED)
     public Room createRoom(@Valid @RequestBody CreateRoomRequest request) {
         return roomService.createRoom(request);
+    }
+
+    @PostMapping("/direct")
+    public Room findOrCreateDirectRoom(@Valid @RequestBody FindOrCreateDirectRoomRequest request) {
+        return roomService.findOrCreateDirectRoom(request.userId1(), request.userId2());
     }
 
     @PatchMapping("/{roomId}")

@@ -3,13 +3,13 @@ package com.chatapp.api.controller;
 import com.chatapp.api.dto.MuteRequest;
 import com.chatapp.common.security.AuthHelper;
 import com.chatapp.domain.model.Room;
+import com.chatapp.service.MessageService;
 import com.chatapp.service.RoomService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Slice;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/rooms")
@@ -17,11 +17,14 @@ import java.util.List;
 public class RoomController {
 
     private final RoomService roomService;
+    private final MessageService messageService;
 
     @GetMapping
-    public List<Room> listRooms(
-            @RequestParam(required = false) Room.RoomType type) {
-        return roomService.getRoomsForUser(AuthHelper.currentUser().getExternalId(), type);
+    public Slice<Room> listRooms(
+            @RequestParam(required = false) Room.RoomType type,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return roomService.getRoomsForUser(AuthHelper.currentUser().getExternalId(), type, page, size);
     }
 
     @GetMapping("/{roomId}")
@@ -40,5 +43,12 @@ public class RoomController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void unmuteRoom(@PathVariable String roomId) {
         roomService.unmuteRoom(roomId, AuthHelper.currentUser().getExternalId());
+    }
+
+    /** Mark all messages in this room as read for the current user. */
+    @PostMapping("/{roomId}/read")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void markRoomAsRead(@PathVariable String roomId) {
+        messageService.markAllAsRead(roomId, AuthHelper.currentUser().getExternalId());
     }
 }
