@@ -77,7 +77,7 @@ Call from your backend when a user registers or logs in:
 curl -X PUT http://localhost:8080/internal/users/user123 \
   -H "X-Internal-Secret: your-internal-api-secret" \
   -H "Content-Type: application/json" \
-  -d '{"displayName": "Jane Doe", "avatarUrl": "https://..."}'
+  -d '{"displayName": "Jane Doe", "nickname": "jane", "avatarUrl": "https://..."}'
 ```
 
 ### 4. Create a room
@@ -112,6 +112,12 @@ Sign with the same `JWT_SECRET`. The Flutter/web client uses this token directly
 
 ## API Reference
 
+A ready-to-use Postman collection is included in the repo. Import it to explore all endpoints instantly:
+
+1. Open Postman → **Import** → select `chat-app.postman_collection.json`
+2. Set the collection variables: `base_url`, `internal_secret`, `jwt`
+3. Start calling
+
 All endpoints that require auth expect `Authorization: Bearer <jwt>` header.  
 Internal endpoints expect `X-Internal-Secret: <secret>` header.
 
@@ -119,17 +125,20 @@ Internal endpoints expect `X-Internal-Secret: <secret>` header.
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `PUT` | `/internal/users/{externalId}` | Create or update a user (displayName, avatarUrl, bio) |
+| `PUT` | `/internal/users/{externalId}` | Create or update a user (displayName, nickname, avatarUrl, bio) |
 | `DELETE` | `/internal/users/{externalId}` | Delete a user |
 
 ### Internal API — Room Management
 
 | Method | Path | Description |
 |--------|------|-------------|
+| `GET` | `/internal/rooms?userId={id}&type={DIRECT\|GROUP}&summary={bool}&page={n}&size={n}` | Kullanıcının odalarını sayfalı getirir. `summary=true` ile son mesaj ve okunmamış sayısı da döner. Varsayılan: page=0, size=20 |
 | `POST` | `/internal/rooms` | Create a room → returns full Room object with `id` |
 | `DELETE` | `/internal/rooms/{roomId}` | Delete a room and its messages |
 | `POST` | `/internal/rooms/{roomId}/members` | Add members to a room |
 | `DELETE` | `/internal/rooms/{roomId}/members/{userId}` | Remove a member from a room |
+| `POST` | `/internal/rooms/{roomId}/messages` | Create a message (migration veya server-side yazma) |
+| `GET` | `/internal/rooms/{roomId}/messages` | Oda mesajlarını getir (`?cursor=<ISO instant>`) |
 
 **Create room request body:**
 ```json
@@ -147,14 +156,14 @@ Internal endpoints expect `X-Internal-Secret: <secret>` header.
 | Method | Path | Description |
 |--------|------|-------------|
 | `GET` | `/api/users/{userId}` | Get user profile |
-| `PUT` | `/api/users/me` | Update own profile (displayName, avatarUrl, bio) |
+| `PUT` | `/api/users/me` | Update own profile (displayName, nickname, avatarUrl, bio) |
 | `PUT` | `/api/users/me/fcm-token` | Register FCM push token |
 
 ### Room API
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET` | `/api/rooms` | List rooms for the authenticated user |
+| `GET` | `/api/rooms?type={DIRECT\|GROUP}` | List rooms for the authenticated user (optional type filter) |
 | `GET` | `/api/rooms/{roomId}` | Get a single room |
 | `PUT` | `/api/rooms/{roomId}/mute` | Mute a room (body: `{"duration": "PT1H"}`) |
 | `DELETE` | `/api/rooms/{roomId}/mute` | Unmute a room |

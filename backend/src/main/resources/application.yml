@@ -2,9 +2,13 @@ spring:
   data:
     mongodb:
       uri: ${MONGO_URI:mongodb://localhost:27017/chatdb}
+  servlet:
+    multipart:
+      max-file-size: ${MAX_FILE_SIZE:20MB}
+      max-request-size: ${MAX_REQUEST_SIZE:20MB}
 
 server:
-  port: 8080
+  port: ${SERVER_PORT:8081}
 
 chat:
   auth:

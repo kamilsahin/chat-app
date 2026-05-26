@@ -3,11 +3,16 @@ package com.chatapp.internal.controller;
 import com.chatapp.domain.model.Room;
 import com.chatapp.internal.dto.AddMembersRequest;
 import com.chatapp.internal.dto.CreateRoomRequest;
+import com.chatapp.internal.dto.FindOrCreateDirectRoomRequest;
+import com.chatapp.internal.dto.RoomSummaryDto;
+import com.chatapp.internal.dto.UpdateRoomRequest;
 import com.chatapp.service.RoomService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/internal/rooms")
@@ -16,16 +21,47 @@ public class InternalRoomController {
 
     private final RoomService roomService;
 
+    @GetMapping
+    public Object getRooms(
+            @RequestParam String userId,
+            @RequestParam(required = false) Room.RoomType type,
+            @RequestParam(defaultValue = "false") boolean summary,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        if (summary) {
+            return roomService.getRoomSummariesForUser(userId, type, page, size);
+        }
+        return roomService.getRoomsForUser(userId, type, page, size);
+    }
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public Room createRoom(@Valid @RequestBody CreateRoomRequest request) {
         return roomService.createRoom(request);
     }
 
+    @PostMapping("/direct")
+    public Room findOrCreateDirectRoom(@Valid @RequestBody FindOrCreateDirectRoomRequest request) {
+        return roomService.findOrCreateDirectRoom(request.userId1(), request.userId2());
+    }
+
+    @PatchMapping("/{roomId}")
+    public Room updateRoom(
+            @PathVariable String roomId,
+            @RequestBody UpdateRoomRequest request) {
+        return roomService.updateRoom(roomId, request);
+    }
+
     @DeleteMapping("/{roomId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteRoom(@PathVariable String roomId) {
         roomService.deleteRoom(roomId);
+    }
+
+    @PatchMapping("/{roomId}/deactivate")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deactivateRoom(@PathVariable String roomId) {
+        roomService.deactivateRoom(roomId);
     }
 
     @PostMapping("/{roomId}/members")

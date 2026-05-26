@@ -21,6 +21,7 @@ public class User {
     private String externalId;
 
     private String displayName;
+    private String nickname;
     private String avatarUrl;
     private String bio;
     private String fcmToken;

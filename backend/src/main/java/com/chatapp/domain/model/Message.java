@@ -52,7 +52,8 @@ public class Message {
     @Builder.Default
     private boolean isPinned = false;
 
-    @CreatedDate
+    // @CreatedDate intentionally removed — MessageService sets this manually so
+    // migration can preserve original timestamps (Spring auditing would override it).
     private Instant createdAt;
 
     @LastModifiedDate

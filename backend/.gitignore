@@ -32,6 +32,9 @@ build/
 ### VS Code ###
 .vscode/
 
+### Dev only ###
+src/main/java/com/chatapp/config/DataSeeder.java
+
 ### Secrets ###
 .env
 **/firebase-service-account.json

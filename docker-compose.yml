@@ -28,6 +28,8 @@ services:
       INTERNAL_API_SECRET: ${INTERNAL_API_SECRET:-change-me-in-production}
       CHAT_UPLOAD_DIR: /app/uploads
       NOTIFICATIONS_ENABLED: ${NOTIFICATIONS_ENABLED:-false}
+      MAX_FILE_SIZE: 20MB
+      MAX_REQUEST_SIZE: 20MB
     volumes:
       - chat-uploads:/app/uploads
 

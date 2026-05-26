@@ -6,6 +6,7 @@ import com.chatapp.domain.model.Message.Location;
 import com.chatapp.domain.model.Message.Reaction;
 import com.chatapp.domain.model.Message.ReadReceipt;
 import com.chatapp.domain.repository.MessageRepository;
+import com.chatapp.domain.repository.RoomRepository;
 import com.chatapp.websocket.dto.SendMessageRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,7 @@ import java.util.List;
 public class ChatService {
 
     private final MessageRepository messageRepository;
+    private final RoomRepository roomRepository;
     private final ChatProperties properties;
 
     public Message saveMessage(String roomId, String senderId, SendMessageRequest request) {
@@ -35,6 +37,7 @@ public class ChatService {
                     .build();
         }
 
+        Instant now = Instant.now();
         Message message = Message.builder()
                 .roomId(roomId)
                 .senderId(senderId)
@@ -44,9 +47,12 @@ public class ChatService {
                 .forwardedFrom(request.forwardedFrom())
                 .imageUrl(request.imageUrl())
                 .location(location)
+                .createdAt(now)
                 .build();
 
-        return messageRepository.save(message);
+        Message saved = messageRepository.save(message);
+        touchRoom(roomId, saved);
+        return saved;
     }
 
     public Message toggleReaction(String messageId, String userId, String emoji) {
@@ -101,6 +107,21 @@ public class ChatService {
         }
 
         return message;
+    }
+
+    private void touchRoom(String roomId, Message message) {
+        roomRepository.findById(roomId).ifPresent(room -> {
+            room.setLastActivityAt(message.getCreatedAt());
+            if (!message.isDeleted()) {
+                String preview = switch (message.getType()) {
+                    case IMAGE    -> "📷 Fotoğraf";
+                    case LOCATION -> "📍 Konum";
+                    default       -> message.getContent();
+                };
+                room.setLastMessage(preview);
+            }
+            roomRepository.save(room);
+        });
     }
 
     private String applyBlocklist(String content) {

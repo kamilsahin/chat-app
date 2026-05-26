@@ -17,8 +17,10 @@ public class UserService {
                 .orElseGet(() -> User.builder().externalId(externalId).build());
 
         if (request.displayName() != null) user.setDisplayName(request.displayName());
+        if (request.nickname() != null) user.setNickname(request.nickname());
         if (request.avatarUrl() != null) user.setAvatarUrl(request.avatarUrl());
         if (request.bio() != null) user.setBio(request.bio());
+        if (request.fcmToken() != null) user.setFcmToken(request.fcmToken());
 
         return userRepository.save(user);
     }
