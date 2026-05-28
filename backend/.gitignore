@@ -41,3 +41,6 @@ src/main/java/com/chatapp/config/DataSeeder.java
 
 ### Uploads ###
 uploads/
+
+### Deploy script (server-only, not for public repo) ###
+deploy.sh
