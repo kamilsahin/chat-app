@@ -216,6 +216,9 @@ public class RoomService {
     }
 
     public Room findOrCreateDirectRoom(String userId1, String userId2) {
+        if (userId1.equals(userId2)) {
+            throw new IllegalArgumentException("Cannot create a direct room with the same user: " + userId1);
+        }
         return roomRepository.findDirectRoom(userId1, userId2)
                 .orElseGet(() -> createRoom(new CreateRoomRequest(
                         Room.RoomType.DIRECT,
