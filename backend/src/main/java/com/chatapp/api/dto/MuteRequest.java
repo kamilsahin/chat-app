@@ -6,6 +6,6 @@ public record MuteRequest(
         @NotNull MuteDuration duration
 ) {
     public enum MuteDuration {
-        HOURS_8, WEEK_1, INDEFINITE
+        HOURS_1, HOURS_8, WEEK_1, INDEFINITE
     }
 }
