@@ -232,6 +232,7 @@ public class RoomService {
                 .orElseThrow(() -> new IllegalArgumentException("Room not found: " + roomId));
 
         Instant mutedUntil = switch (duration) {
+            case HOURS_1 -> Instant.now().plusSeconds(3600);
             case HOURS_8 -> Instant.now().plusSeconds(8 * 3600);
             case WEEK_1 -> Instant.now().plusSeconds(7 * 24 * 3600);
             case INDEFINITE -> null;
