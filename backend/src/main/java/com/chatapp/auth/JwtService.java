@@ -29,11 +29,8 @@ public class JwtService {
             String[] parts = token.trim().split("\\.");
             if (parts.length != 3) return Optional.empty();
 
-            // JJWT 0.9.x (used by Actizone) base64-decodes the secret string
-            // before signing. We must do the same to verify their tokens.
-            byte[] keyBytes = Base64.getDecoder().decode(
-                    properties.getAuth().getJwtSecret().getBytes(StandardCharsets.UTF_8));
-
+            byte[] keyBytes = properties.getAuth().getJwtSecret()
+                    .getBytes(StandardCharsets.UTF_8);
 
             Map<String, Object> header = decodeJson(parts[0]);
             String jcaName = jcaName((String) header.getOrDefault("alg", "HS256"));
