@@ -29,11 +29,8 @@ public class JwtService {
             String[] parts = token.trim().split("\\.");
             if (parts.length != 3) return Optional.empty();
 
-            // JWT_SECRET must be Base64-encoded plain text secret.
-            // Flutter signs with raw UTF-8 bytes; Base64.decode(secret) yields the same bytes.
-            byte[] keyBytes = Base64.getDecoder().decode(
-                    properties.getAuth().getJwtSecret().getBytes(StandardCharsets.UTF_8));
-
+            byte[] keyBytes = properties.getAuth().getJwtSecret()
+                    .getBytes(StandardCharsets.UTF_8);
 
             Map<String, Object> header = decodeJson(parts[0]);
             String jcaName = jcaName((String) header.getOrDefault("alg", "HS256"));
