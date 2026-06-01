@@ -28,9 +28,10 @@ public class MessageController {
     @ResponseStatus(HttpStatus.CREATED)
     public Message sendImage(
             @PathVariable String roomId,
-            @RequestParam("file") MultipartFile file) throws IOException {
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "caption", required = false) String caption) throws IOException {
         User sender = AuthHelper.currentUser();
-        Message message = messageService.sendImageMessage(roomId, sender.getExternalId(), file);
+        Message message = messageService.sendImageMessage(roomId, sender.getExternalId(), file, caption);
         messagingTemplate.convertAndSend("/topic/room." + roomId, message);
         fcmNotificationService.notifyNewMessage(message, sender.getDisplayName());
         return message;

@@ -12,18 +12,24 @@
     #log { background: #1e1e1e; color: #d4d4d4; padding: 12px; height: 300px; overflow-y: auto; border-radius: 4px; white-space: pre-wrap; }
     .section { margin: 16px 0; padding: 12px; border: 1px solid #ddd; border-radius: 4px; }
     label { font-weight: bold; font-size: 12px; }
+    #generatedToken { font-size: 10px; color: #888; word-break: break-all; margin-top: 4px; }
   </style>
 </head>
 <body>
   <h2>Chat App — WebSocket Test</h2>
 
   <div class="section">
-    <label>JWT Token</label>
-    <input id="token" placeholder="Bearer token (jwt.io'dan üret)" />
+    <label>User ID</label>
+    <input id="userId" placeholder="Kullanıcı ID (örn: 1234)" />
+    <label>Display Name</label>
+    <input id="displayName" placeholder="Ad Soyad (opsiyonel)" />
+    <label>JWT Secret (plain text)</label>
+    <input id="jwtSecret" value="actizone-chat-secret-2026-minimum-32-chars-ok" />
     <label>Server URL</label>
     <input id="serverUrl" value="http://localhost:8081/ws" />
     <button onclick="connect()">Connect</button>
     <button onclick="disconnect()">Disconnect</button>
+    <div id="generatedToken"></div>
   </div>
 
   <div class="section">
@@ -55,16 +61,51 @@
       el.scrollTop = el.scrollHeight;
     }
 
-    function connect() {
-      const token = document.getElementById('token').value.trim();
-      const url = document.getElementById('serverUrl').value.trim();
+    function b64url(bytes) {
+      return btoa(String.fromCharCode(...new Uint8Array(bytes)))
+        .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+    }
 
-      if (!token) { alert('JWT token gir'); return; }
+    function b64urlStr(str) {
+      return btoa(unescape(encodeURIComponent(str)))
+        .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+    }
+
+    async function generateJwt(userId, displayName, secret) {
+      const header = { alg: 'HS256', typ: 'JWT' };
+      const now = Math.floor(Date.now() / 1000);
+      const payload = { sub: String(userId), iat: now, exp: now + 30 * 24 * 3600 };
+      if (displayName) payload.displayName = displayName;
+
+      const headerB64  = b64urlStr(JSON.stringify(header));
+      const payloadB64 = b64urlStr(JSON.stringify(payload));
+      const signing = `${headerB64}.${payloadB64}`;
+
+      // Sign with raw UTF-8 bytes of the secret (same as dart_jsonwebtoken SecretKey)
+      const keyBytes = new TextEncoder().encode(secret);
+      const cryptoKey = await crypto.subtle.importKey(
+        'raw', keyBytes, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+      );
+      const sig = await crypto.subtle.sign('HMAC', cryptoKey, new TextEncoder().encode(signing));
+
+      return `${signing}.${b64url(sig)}`;
+    }
+
+    async function connect() {
+      const userId      = document.getElementById('userId').value.trim();
+      const displayName = document.getElementById('displayName').value.trim();
+      const secret      = document.getElementById('jwtSecret').value.trim();
+      const url         = document.getElementById('serverUrl').value.trim();
+
+      if (!userId) { alert('User ID gir'); return; }
+
+      const token = await generateJwt(userId, displayName, secret);
+      document.getElementById('generatedToken').textContent = 'Token: ' + token;
 
       client = new StompJs.Client({
         webSocketFactory: () => new SockJS(url),
         connectHeaders: { Authorization: 'Bearer ' + token },
-        onConnect: () => log('✅ Connected', '#4ec9b0'),
+        onConnect: () => log('✅ Connected (userId=' + userId + ')', '#4ec9b0'),
         onDisconnect: () => log('🔌 Disconnected', '#f44747'),
         onStompError: (frame) => log('❌ STOMP Error: ' + frame.headers?.message, '#f44747'),
       });
@@ -88,7 +129,7 @@
     }
 
     function sendMessage() {
-      const roomId = document.getElementById('sendRoomId').value.trim();
+      const roomId  = document.getElementById('sendRoomId').value.trim();
       const content = document.getElementById('msgContent').value.trim();
       if (!roomId || !content || !client?.connected) { alert('Önce connect ol, Room ID ve mesaj gir'); return; }
 

@@ -31,38 +31,52 @@ public class FcmNotificationService {
 
     @Async
     public void notifyNewMessage(Message message, String senderDisplayName) {
-        if (!properties.getNotifications().isEnabled()) return;
-        if (firebaseMessaging.isEmpty()) return;
+        try {
+            if (!properties.getNotifications().isEnabled()) return;
+            if (firebaseMessaging.isEmpty()) return;
 
-        Room room = roomRepository.findById(message.getRoomId()).orElse(null);
-        if (room == null) return;
+            Room room = roomRepository.findById(message.getRoomId()).orElse(null);
+            if (room == null) return;
 
-        String title = senderDisplayName != null && !senderDisplayName.isBlank()
-                ? senderDisplayName : "Yeni mesaj";
-        String body = buildBody(message);
+            String title = senderDisplayName != null && !senderDisplayName.isBlank()
+                    ? senderDisplayName : "Yeni mesaj";
+            String body = buildBody(message);
 
-        List<String> recipientIds = room.getMembers().stream()
-                .filter(m -> !m.getUserId().equals(message.getSenderId()))
-                .filter(m -> !isEffectivelyMuted(m))
-                .map(Room.Member::getUserId)
-                .toList();
+            // Sender'ın avatarını çek — bildirime eklenecek
+            String senderAvatarUrl = userRepository.findByExternalId(message.getSenderId())
+                    .map(User::getAvatarUrl)
+                    .orElse(null);
 
-        if (recipientIds.isEmpty()) return;
+            List<String> recipientIds = room.getMembers().stream()
+                    .filter(m -> !m.getUserId().equals(message.getSenderId()))
+                    .filter(m -> !isEffectivelyMuted(m))
+                    .map(Room.Member::getUserId)
+                    .toList();
 
-        userRepository.findAllByExternalIdIn(recipientIds).forEach(recipient -> {
-            if (recipient.getFcmToken() != null && !recipient.getFcmToken().isBlank()) {
-                sendToToken(recipient, title, body, message.getRoomId());
-            }
-        });
+            if (recipientIds.isEmpty()) return;
+
+            userRepository.findAllByExternalIdIn(recipientIds).forEach(recipient -> {
+                if (recipient.getFcmToken() != null && !recipient.getFcmToken().isBlank()) {
+                    sendToToken(recipient, title, body, message.getRoomId(), senderAvatarUrl);
+                }
+            });
+        } catch (Exception e) {
+            log.error("[FCM] notifyNewMessage failed — messageId={}: {}", message.getId(), e.getMessage(), e);
+        }
     }
 
-    private void sendToToken(User user, String title, String body, String roomId) {
+    private void sendToToken(User user, String title, String body, String roomId, String senderAvatarUrl) {
         try {
-            com.google.firebase.messaging.Message fcmMessage = com.google.firebase.messaging.Message.builder()
+            var builder = com.google.firebase.messaging.Message.builder()
                     .setToken(user.getFcmToken())
                     .setNotification(Notification.builder().setTitle(title).setBody(body).build())
-                    .putData("roomId", roomId)
-                    .build();
+                    .putData("roomId", roomId);
+
+            if (senderAvatarUrl != null && !senderAvatarUrl.isBlank()) {
+                builder.putData("avatarUrl", senderAvatarUrl);
+            }
+
+            com.google.firebase.messaging.Message fcmMessage = builder.build();
 
             firebaseMessaging.get().send(fcmMessage);
         } catch (FirebaseMessagingException e) {
