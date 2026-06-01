@@ -29,8 +29,8 @@ public class JwtService {
             String[] parts = token.trim().split("\\.");
             if (parts.length != 3) return Optional.empty();
 
-            // JJWT 0.9.x (used by Actizone) base64-decodes the secret string
-            // before signing. We must do the same to verify their tokens.
+            // JWT_SECRET must be Base64-encoded plain text secret.
+            // Flutter signs with raw UTF-8 bytes; Base64.decode(secret) yields the same bytes.
             byte[] keyBytes = Base64.getDecoder().decode(
                     properties.getAuth().getJwtSecret().getBytes(StandardCharsets.UTF_8));
 

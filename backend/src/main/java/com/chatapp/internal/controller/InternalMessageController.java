@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Slice;
 import org.springframework.http.HttpStatus;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
@@ -21,17 +22,28 @@ public class InternalMessageController {
 
     private final MessageService messageService;
     private final MessageRepository messageRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     /**
      * Migration ve server-side mesaj yazma için.
-     * createdAt verilirse eski tarih korunur (migration), verilmezse şimdiki zaman kullanılır.
+     * createdAt verilirse eski tarih korunur (migration) ve WebSocket broadcast yapılmaz.
+     * createdAt null ise gerçek zamanlı mesajdır — WebSocket broadcast yapılır (FCM yok, caller halleder).
      */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public Message createMessage(
             @PathVariable String roomId,
             @Valid @RequestBody CreateMessageRequest request) {
-        return messageService.createMessage(roomId, request);
+        Message message = messageService.createMessage(roomId, request);
+
+        // Sadece gerçek zamanlı mesajlarda (createdAt=null) WebSocket broadcast yap.
+        // Migration mesajlarında (createdAt dolu) broadcast yapma — binlerce eski mesaj push gelmesin.
+        // FCM burada kasıtlı gönderilmiyor: internal mesajların notification'ını caller (ActiZone) halleder.
+        if (request.createdAt() == null) {
+            messagingTemplate.convertAndSend("/topic/room." + roomId, message);
+        }
+
+        return message;
     }
 
     /**

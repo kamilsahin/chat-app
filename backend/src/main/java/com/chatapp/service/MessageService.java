@@ -2,7 +2,6 @@ package com.chatapp.service;
 
 import com.chatapp.config.ChatProperties;
 import com.chatapp.domain.model.Message;
-import com.chatapp.domain.model.Room;
 import com.chatapp.domain.model.Room.MemberRole;
 import com.chatapp.domain.repository.MessageRepository;
 import com.chatapp.domain.repository.RoomRepository;
@@ -36,7 +35,7 @@ public class MessageService {
     private final ChatProperties properties;
     private final MongoTemplate mongoTemplate;
 
-    public Message sendImageMessage(String roomId, String senderId, MultipartFile file) throws IOException {
+    public Message sendImageMessage(String roomId, String senderId, MultipartFile file, String caption) throws IOException {
         if (!properties.getFeatures().isFileSharingEnabled()) {
             throw new IllegalStateException("File sharing is disabled");
         }
@@ -47,12 +46,14 @@ public class MessageService {
         }
 
         String imageUrl = storageService.store(file);
+        String safeCaption = (caption != null && !caption.isBlank()) ? applyBlocklist(caption.trim()) : null;
 
         Message message = Message.builder()
                 .roomId(roomId)
                 .senderId(senderId)
                 .type(Message.MessageType.IMAGE)
                 .imageUrl(imageUrl)
+                .content(safeCaption)
                 .createdAt(Instant.now())
                 .build();
 
