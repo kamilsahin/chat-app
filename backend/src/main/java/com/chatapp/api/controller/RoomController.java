@@ -29,7 +29,18 @@ public class RoomController {
 
     @GetMapping("/{roomId}")
     public Room getRoom(@PathVariable String roomId) {
-        return roomService.getRoom(roomId);
+        return roomService.getRoomEnriched(roomId, AuthHelper.currentUser().getExternalId());
+    }
+
+    /**
+     * Karşı kullanıcıyla DIRECT odayı bulur/oluşturur ve enrich edilmiş döner.
+     * Profilden "Mesaj yaz" akışı bunu çağırır.
+     */
+    @PostMapping("/direct")
+    public Room createDirectRoom(@RequestBody java.util.Map<String, String> body) {
+        String otherUserId = body.get("userId");
+        return roomService.findOrCreateDirectRoomEnriched(
+                AuthHelper.currentUser().getExternalId(), otherUserId);
     }
 
     @PutMapping("/{roomId}/mute")
@@ -50,5 +61,15 @@ public class RoomController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void markRoomAsRead(@PathVariable String roomId) {
         messageService.markAllAsRead(roomId, AuthHelper.currentUser().getExternalId());
+    }
+
+    /**
+     * Sohbet geçmişini sadece bu kullanıcı için temizler.
+     * Mesajlar sistemden silinmez; diğer üyeler görmeye devam eder.
+     */
+    @DeleteMapping("/{roomId}/history")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void clearHistory(@PathVariable String roomId) {
+        roomService.clearHistory(roomId, AuthHelper.currentUser().getExternalId());
     }
 }

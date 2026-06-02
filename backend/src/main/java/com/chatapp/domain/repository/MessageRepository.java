@@ -21,6 +21,14 @@ public interface MessageRepository extends MongoRepository<Message, String> {
     // New-messages polling: messages after a given timestamp, oldest first
     List<Message> findByRoomIdAndCreatedAtAfterOrderByCreatedAtAsc(String roomId, Instant after);
 
+    // clearHistory: clearedAt filtreli ilk sayfa (cursor yok)
+    Slice<Message> findByRoomIdAndCreatedAtGreaterThanEqualOrderByCreatedAtDesc(
+            String roomId, Instant clearedAt, Pageable pageable);
+
+    // clearHistory: clearedAt filtreli cursor'lı sayfa
+    Slice<Message> findByRoomIdAndCreatedAtGreaterThanEqualAndCreatedAtBeforeOrderByCreatedAtDesc(
+            String roomId, Instant clearedAt, Instant cursor, Pageable pageable);
+
     Optional<Message> findByRoomIdAndIsPinnedTrue(String roomId);
 
     Optional<Message> findFirstByRoomIdOrderByCreatedAtDesc(String roomId);

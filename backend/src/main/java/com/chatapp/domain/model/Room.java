@@ -41,6 +41,9 @@ public class Room {
     @Builder.Default
     private Long unreadCount = 0L;
 
+    /** DIRECT odalarda karşı kullanıcının externalId'si. Query anında doldurulur. */
+    private String otherUserId;
+
     // -------------------------------------------------------------------------
 
     public enum RoomType {
@@ -61,6 +64,8 @@ public class Room {
         private boolean muted = false;
 
         private Instant mutedUntil;
+
+        private Instant clearedAt;
     }
 
     public enum MemberRole {

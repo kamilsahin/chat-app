@@ -113,6 +113,22 @@ public class RoomService {
         List<Room> rooms = type != null
                 ? roomRepository.findAllByMemberUserIdAndType(userId, type)
                 : roomRepository.findAllByMemberUserId(userId);
+
+        // clearedAt set edilmiş ve o tarihten sonra yeni mesaj gelmemiş odaları gizle
+        rooms = rooms.stream()
+                .filter(room -> {
+                    Instant clearedAt = room.getMembers().stream()
+                            .filter(m -> m.getUserId().equals(userId))
+                            .findFirst()
+                            .map(Member::getClearedAt)
+                            .orElse(null);
+                    if (clearedAt == null) return true; // hiç silinmemiş, göster
+                    // Son aktivite clearedAt'ten sonraysa yeni mesaj var → göster
+                    Instant lastActivity = room.getLastActivityAt();
+                    return lastActivity != null && lastActivity.isAfter(clearedAt);
+                })
+                .collect(Collectors.toList());
+
         enrichDirectRooms(rooms, userId);
         return rooms;
     }
@@ -142,10 +158,13 @@ public class RoomService {
                     .map(Member::getUserId)
                     .filter(id -> !id.equals(currentUserId))
                     .findFirst()
-                    .map(userMap::get)
-                    .ifPresent(user -> {
-                        room.setName(user.getDisplayName());
-                        room.setAvatarUrl(user.getAvatarUrl());
+                    .ifPresent(otherId -> {
+                        room.setOtherUserId(otherId);
+                        User other = userMap.get(otherId);
+                        if (other != null) {
+                            room.setName(other.getDisplayName());
+                            room.setAvatarUrl(other.getAvatarUrl());
+                        }
                     });
         }
     }
@@ -158,10 +177,25 @@ public class RoomService {
                 ? roomRepository.findByMemberUserIdAndType(userId, type, pageable)
                 : roomRepository.findByMemberUserId(userId, pageable);
 
-        List<Room> rooms = slice.getContent();
+        // clearedAt filtresi — geçmişi silinmiş ve yeni mesaj gelmemiş odaları çıkar
+        List<Room> rooms = slice.getContent().stream()
+                .filter(room -> {
+                    Instant clearedAt = room.getMembers().stream()
+                            .filter(m -> m.getUserId().equals(userId))
+                            .findFirst()
+                            .map(Member::getClearedAt)
+                            .orElse(null);
+                    if (clearedAt == null) return true;
+                    Instant lastActivity = room.getLastActivityAt();
+                    return lastActivity != null && lastActivity.isAfter(clearedAt);
+                })
+                .collect(Collectors.toList());
+
         enrichDirectRooms(rooms, userId);
         attachUnreadCounts(rooms, userId);
-        return slice;
+
+        // Filtrelenmiş içerikle yeni Slice döndür (hasNext bilgisini koru)
+        return new org.springframework.data.domain.SliceImpl<>(rooms, pageable, slice.hasNext());
     }
 
     /** Single aggregation to get unread counts for all rooms in one query. */
@@ -215,6 +249,15 @@ public class RoomService {
                 .orElseThrow(() -> new IllegalArgumentException("Room not found: " + roomId));
     }
 
+    /** Tek odayı karşı kullanıcı bilgisiyle (isim/avatar/otherUserId) zenginleştirip döner. */
+    public Room getRoomEnriched(String roomId, String currentUserId) {
+        Room room = getRoom(roomId);
+        if (room.getType() == RoomType.DIRECT) {
+            enrichDirectRooms(new ArrayList<>(List.of(room)), currentUserId);
+        }
+        return room;
+    }
+
     public Room findOrCreateDirectRoom(String userId1, String userId2) {
         if (userId1.equals(userId2)) {
             throw new IllegalArgumentException("Cannot create a direct room with the same user: " + userId1);
@@ -225,6 +268,16 @@ public class RoomService {
                         null, null,
                         List.of(userId1, userId2),
                         null)));
+    }
+
+    /**
+     * DIRECT odayı bul/oluştur ve karşı kullanıcı bilgisiyle (isim/avatar/otherUserId)
+     * zenginleştir. Profilden "Mesaj yaz" akışı için public API kullanır.
+     */
+    public Room findOrCreateDirectRoomEnriched(String currentUserId, String otherUserId) {
+        Room room = findOrCreateDirectRoom(currentUserId, otherUserId);
+        enrichDirectRooms(new ArrayList<>(List.of(room)), currentUserId);
+        return room;
     }
 
     public Room muteRoom(String roomId, String userId, MuteDuration duration) {
@@ -268,5 +321,31 @@ public class RoomService {
 
         room.setMembers(updated);
         return roomRepository.save(room);
+    }
+
+    /**
+     * Kullanıcı için sohbet geçmişini temizler.
+     * Sistemden silmez — sadece o kullanıcı için clearedAt = now set eder.
+     * Sonraki getHistory çağrılarında bu tarihten önceki mesajlar gizlenir.
+     */
+    public void clearHistory(String roomId, String userId) {
+        Room room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new IllegalArgumentException("Room not found: " + roomId));
+
+        boolean isMember = room.getMembers().stream()
+                .anyMatch(m -> m.getUserId().equals(userId));
+        if (!isMember) throw new IllegalStateException("User is not a member of this room");
+
+        List<Member> updated = room.getMembers().stream()
+                .map(m -> {
+                    if (m.getUserId().equals(userId)) {
+                        m.setClearedAt(Instant.now());
+                    }
+                    return m;
+                })
+                .toList();
+
+        room.setMembers(updated);
+        roomRepository.save(room);
     }
 }
