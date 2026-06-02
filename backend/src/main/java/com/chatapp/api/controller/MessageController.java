@@ -41,7 +41,7 @@ public class MessageController {
     public Slice<Message> getHistory(
             @PathVariable String roomId,
             @RequestParam(required = false) String cursor) {
-        return messageService.getHistory(roomId, cursor);
+        return messageService.getHistory(roomId, AuthHelper.currentUser().getExternalId(), cursor);
     }
 
     @GetMapping("/api/rooms/{roomId}/pin")

@@ -54,7 +54,8 @@ public class InternalMessageController {
     public Slice<Message> getMessages(
             @PathVariable String roomId,
             @RequestParam(required = false) String cursor) {
-        return messageService.getHistory(roomId, cursor);
+        // Internal API'de user context yok → clearedAt filtresi uygulanmaz (userId=null)
+        return messageService.getHistory(roomId, null, cursor);
     }
 
     /**

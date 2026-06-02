@@ -1,13 +1,16 @@
 package com.chatapp.websocket.controller;
 
 import com.chatapp.domain.model.Message;
+import com.chatapp.domain.model.Room;
 import com.chatapp.domain.model.User;
+import com.chatapp.domain.repository.RoomRepository;
 import com.chatapp.service.ChatService;
 import com.chatapp.service.FcmNotificationService;
 import com.chatapp.websocket.dto.ReactionRequest;
 import com.chatapp.websocket.dto.SendMessageRequest;
 import com.chatapp.websocket.dto.TypingEvent;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
@@ -15,7 +18,9 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
 import java.security.Principal;
+import java.util.Map;
 
+@Slf4j
 @Controller
 @RequiredArgsConstructor
 public class ChatController {
@@ -23,6 +28,7 @@ public class ChatController {
     private final ChatService chatService;
     private final SimpMessagingTemplate messagingTemplate;
     private final FcmNotificationService fcmNotificationService;
+    private final RoomRepository roomRepository;
 
     // Client publishes to: /app/room.{roomId}.send
     // Server broadcasts to: /topic/room.{roomId}
@@ -35,7 +41,25 @@ public class ChatController {
         User user = getUser(principal);
         Message message = chatService.saveMessage(roomId, user.getExternalId(), request);
         messagingTemplate.convertAndSend("/topic/room." + roomId, message);
+        notifyMembersRoomActivity(roomId, user.getExternalId());
         fcmNotificationService.notifyNewMessage(message, user.getDisplayName());
+    }
+
+    /**
+     * Her üyenin kişisel kanalına ("/topic/user.{id}.rooms") oda aktivitesi bildirir.
+     * Liste ekranı açık olan ama bu odaya henüz abone olmamış (yeni konuşma) kullanıcılar
+     * bu sayede listeyi yenileyip odayı en üste taşıyabilir.
+     */
+    private void notifyMembersRoomActivity(String roomId, String senderId) {
+        roomRepository.findById(roomId).ifPresent(room -> {
+            for (Room.Member m : room.getMembers()) {
+                if (m.getUserId().equals(senderId)) continue;
+                log.info("[UserRooms] push to /topic/user.{}.rooms roomId={}", m.getUserId(), roomId);
+                messagingTemplate.convertAndSend(
+                        "/topic/user." + m.getUserId() + ".rooms",
+                        Map.of("roomId", roomId));
+            }
+        });
     }
 
     // Client publishes to: /app/room.{roomId}.typing

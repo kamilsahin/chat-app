@@ -91,18 +91,35 @@ public class MessageService {
         });
     }
 
-    public Slice<Message> getHistory(String roomId, String cursor) {
+    public Slice<Message> getHistory(String roomId, String userId, String cursor) {
         PageRequest page = PageRequest.of(0, PAGE_SIZE);
 
+        // Kullanıcının bu oda için clearedAt değerini bul (internal API'de userId=null olabilir)
+        Instant clearedAt = (userId == null) ? null : roomRepository.findById(roomId)
+                .flatMap(r -> r.getMembers().stream()
+                        .filter(m -> m.getUserId().equals(userId))
+                        .findFirst())
+                .map(com.chatapp.domain.model.Room.Member::getClearedAt)
+                .orElse(null);
+
         if (cursor == null) {
-            return messageRepository.findByRoomIdOrderByCreatedAtDesc(roomId, page);
+            if (clearedAt == null) {
+                return messageRepository.findByRoomIdOrderByCreatedAtDesc(roomId, page);
+            }
+            return messageRepository
+                    .findByRoomIdAndCreatedAtGreaterThanEqualOrderByCreatedAtDesc(roomId, clearedAt, page);
         }
 
-        // Cursor may arrive URL-encoded (e.g. %3A for :) from RestTemplate callers
         String decoded = java.net.URLDecoder.decode(cursor, java.nio.charset.StandardCharsets.UTF_8);
         Instant cursorInstant = Instant.parse(decoded);
+
+        if (clearedAt == null) {
+            return messageRepository
+                    .findByRoomIdAndCreatedAtBeforeOrderByCreatedAtDesc(roomId, cursorInstant, page);
+        }
         return messageRepository
-                .findByRoomIdAndCreatedAtBeforeOrderByCreatedAtDesc(roomId, cursorInstant, page);
+                .findByRoomIdAndCreatedAtGreaterThanEqualAndCreatedAtBeforeOrderByCreatedAtDesc(
+                        roomId, clearedAt, cursorInstant, page);
     }
 
     public List<Message> getNewMessages(String roomId, String after) {
