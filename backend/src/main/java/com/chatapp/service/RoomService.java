@@ -1,6 +1,5 @@
 package com.chatapp.service;
 
-import com.chatapp.domain.model.Message;
 import com.chatapp.domain.model.Room;
 import com.chatapp.domain.model.Room.Member;
 import com.chatapp.domain.model.Room.MemberRole;
@@ -142,15 +141,11 @@ public class RoomService {
                 .filter(id -> !id.equals(currentUserId))
                 .collect(Collectors.toSet());
 
-        log.info("[enrich] currentUserId={} otherUserIds={}", currentUserId, otherUserIds);
-
         if (otherUserIds.isEmpty()) return;
 
         Map<String, User> userMap = userRepository.findAllByExternalIdIn(otherUserIds)
                 .stream()
                 .collect(Collectors.toMap(User::getExternalId, u -> u));
-
-        log.info("[enrich] found {} users in DB out of {} needed", userMap.size(), otherUserIds.size());
 
         for (Room room : rooms) {
             if (room.getType() != RoomType.DIRECT) continue;
@@ -228,29 +223,12 @@ public class RoomService {
 
     public Slice<RoomSummaryDto> getRoomSummariesForUser(String userId, RoomType type, int page, int size) {
         Slice<Room> rooms = getRoomsForUser(userId, type, page, size);
-        List<Room> roomList = rooms.getContent();
-        // Batch-load last messages to avoid N individual queries per room.
-        // unreadCount is already set on each Room by getRoomsForUser → attachUnreadCounts.
-        Map<String, Message> lastMessages = batchLastMessages(roomList);
-        List<RoomSummaryDto> summaries = roomList.stream()
-                .map(room -> new RoomSummaryDto(
-                        room,
-                        lastMessages.get(room.getId()),
-                        room.getUnreadCount()))
+        // Room.lastMessage (String) and Room.lastActivityAt are already denormalized —
+        // no extra message query needed. unreadCount set by attachUnreadCounts.
+        List<RoomSummaryDto> summaries = rooms.getContent().stream()
+                .map(room -> new RoomSummaryDto(room, room.getUnreadCount()))
                 .toList();
         return new org.springframework.data.domain.SliceImpl<>(summaries, rooms.getPageable(), rooms.hasNext());
-    }
-
-    /**
-     * Single aggregation to fetch the latest non-deleted message for each room.
-     * Replaces N individual findFirstByRoomIdOrderByCreatedAtDesc calls.
-     */
-    private Map<String, Message> batchLastMessages(List<Room> rooms) {
-        if (rooms.isEmpty()) return Map.of();
-        List<String> roomIds = rooms.stream().map(Room::getId).toList();
-        return messageRepository.findLastMessagePerRoom(roomIds)
-                .stream()
-                .collect(Collectors.toMap(Message::getRoomId, m -> m));
     }
 
     public Room updateRoom(String roomId, UpdateRoomRequest request) {
