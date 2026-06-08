@@ -4,7 +4,8 @@ import lombok.Builder;
 import lombok.Data;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.Instant;
@@ -13,6 +14,15 @@ import java.util.List;
 @Data
 @Builder
 @Document(collection = "rooms")
+@CompoundIndexes({
+    // members.userId is a multikey field (array of Member objects).
+    // This compound index covers all repository queries:
+    //   findAllByMemberUserId, findByMemberUserId,
+    //   findAllByMemberUserIdAndType, findByMemberUserIdAndType,
+    //   findDirectRoom ($all on members.userId uses the index; $expr filters post-index).
+    @CompoundIndex(name = "idx_members_userId_type_active",
+                   def = "{'members.userId': 1, 'type': 1, 'active': 1}")
+})
 public class Room {
 
     @Id

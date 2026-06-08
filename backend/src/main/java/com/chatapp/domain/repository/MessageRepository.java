@@ -33,6 +33,18 @@ public interface MessageRepository extends MongoRepository<Message, String> {
 
     Optional<Message> findFirstByRoomIdOrderByCreatedAtDesc(String roomId);
 
+    /**
+     * Returns the latest non-deleted message for each room in a single aggregation.
+     * Uses {'roomId': 1, 'createdAt': -1} compound index. Replaces N individual queries.
+     */
+    @org.springframework.data.mongodb.repository.Aggregation(pipeline = {
+        "{ $match: { roomId: { $in: ?0 }, isDeleted: false } }",
+        "{ $sort:  { createdAt: -1 } }",
+        "{ $group: { _id: '$roomId', doc: { $first: '$$ROOT' } } }",
+        "{ $replaceRoot: { newRoot: '$doc' } }"
+    })
+    List<Message> findLastMessagePerRoom(List<String> roomIds);
+
     @org.springframework.data.mongodb.repository.Query(
         value = "{ 'roomId': ?0, 'senderId': { $ne: ?1 }, 'readBy.userId': { $ne: ?1 }, 'isDeleted': false }",
         count = true
