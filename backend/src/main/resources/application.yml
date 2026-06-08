@@ -22,7 +22,7 @@ chat:
     upload-dir: ${CHAT_UPLOAD_DIR:./uploads}
 
   notifications:
-    enabled: ${NOTIFICATIONS_ENABLED:false}
+    enabled: ${NOTIFICATIONS_ENABLED:true}
     fcm:
       credentials-file: ${FCM_CREDENTIALS_FILE:}
 
