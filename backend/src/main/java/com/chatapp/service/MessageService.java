@@ -73,9 +73,9 @@ public class MessageService {
                 .build();
         Message saved = messageRepository.save(message);
         touchRoom(roomId, saved);
-        // Migration mesajları (geçmişe ait createdAt) loglanmasın
+        // Skip logging for migration messages (historical createdAt)
         if (request.createdAt() == null) {
-            log.info("[Chat] mesaj gönderildi — gönderen={} oda={}", request.senderId(), roomId);
+            log.info("[Chat] message sent — senderId={} roomId={}", request.senderId(), roomId);
         }
         return saved;
     }
@@ -97,8 +97,8 @@ public class MessageService {
 
     public Slice<Message> getHistory(String roomId, String userId, String cursor) {
         if (cursor == null) {
-            // Sadece ilk açılışta logla, sayfalama isteklerinde değil
-            log.info("[Chat] oda açıldı — kullanıcı={} oda={}", userId != null ? userId : "internal", roomId);
+            // Log only on first open, not on pagination requests
+            log.info("[Chat] room opened — userId={} roomId={}", userId != null ? userId : "internal", roomId);
         }
         PageRequest page = PageRequest.of(0, PAGE_SIZE);
 
